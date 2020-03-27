@@ -13,6 +13,8 @@ manuscript/
 notes/
 spatial_data/
 scripts/exploration/
+scripts/exploration/representativeness_nEEZs_visited.r
+representativeness_nEE/downsample_tracks.r
 scripts/geodata/
 scripts/data_request_rmarkdown/
 political_connectivity.Rproj
