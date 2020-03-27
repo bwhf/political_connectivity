@@ -1,0 +1,17 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+Atlantic_migrants_MD/
+data/
+data_phenology/
+data_summaries/
+data_summaries_FINAL/
+data_test/
+figures/
+manuscript/
+notes/
+spatial_data/
+scripts/exploration/
+scripts/geodata/
+scripts/data_request_rmarkdown/
