@@ -1,12 +1,12 @@
-# Create network connecting origin country communities to high seas RFMOs
+#### Create network connecting origin country communities to high seas RFMOs ####
 
 pacman::p_load(igraph, ggraph, tidyverse, ggplot2, stringr)
 
 basin_class <- read.csv("data_test/basin_class_df.csv") # ocean basin classification
 
 ## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-thresh <- "high"
-# thresh  <- "low"
+# thresh <- "high"
+thresh  <- "low"
 
 if(thresh == "high"){
   master <- "data/analysis/bird_thresh/"
@@ -48,15 +48,20 @@ for(i in 1:length(subfolders)){
 
 rfmo_df <- do.call("rbind", rfmo_list)
 
+## adjust proportion of monthly time spent values by the total proportion of that month spent in high seas 
+# globprop_rel == proportion of species' monthly High Seas time spent in RFMO x
+# globprop_hs  == proportion of species' monthly time spent in High Seas in month 
+# globprop_abs == proportion of species' monthly time spent in RFMO x
+# NEED to get alltimes from 'network_analysis_breed2visit_month.r'
+highseas <- alltimes %>% filter(jurisdiction=="High seas") %>% select(adj_site_name, scientific_name, month, globprop) %>% group_by(adj_site_name, scientific_name, month) %>% summarise(globprop = first(globprop))
 
+rfmo_df <- merge(rfmo_df, highseas, by=c("scientific_name", "adj_site_name", "month")) %>% rename(globprop_rel = globprop.x, globprop_hs = globprop.y) %>% mutate(globprop_abs = globprop_hs * globprop_rel)
 
 ######## NETWORK!! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # don't need to group_by 'rfmo_run' b/c no RFMO will be visited twice by same individual
 visitsum <- rfmo_df %>% group_by(scientific_name, origin, jurisdiction) %>% summarise( 
-  glob_ann_prop = sum(na.omit(globprop)) / 12 
+  glob_ann_prop = sum(na.omit(globprop_abs)) / 12 
 ) %>% filter(!is.na(origin)) %>% filter(jurisdiction != "otherRFMO") #NOTE# need to make sure to earlier ID which "otherRMFO" are NO RFMO
-
-
 
 origins <- unique(visitsum$origin)
 
@@ -149,11 +154,11 @@ boxes <- rbind.data.frame(IboxO, IboxN, PboxO, PboxN, AboxO, AboxN) %>% group_by
   xmin = first(xmin), xmax = first(xmax), ymin = first(ymin), ymax = first(ymax)
 )
 
-
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 # PLOT # 
 ## to plot only top N connections (top 1, 2, etc) for illustrative purposes
 edges_topn <- edgelist_full %>% group_by(origin) %>% arrange(desc(weight)) %>% top_n(3, weight)
-
+maxweight <- ceiling(max(na.omit(edges_topn$weight)) * 100) 
 routes_igraph2 <- delete.edges(routes_igraph, which(!E(routes_igraph)$weight %in% edges_topn$weight))
 
 plot_igraph <- routes_igraph2
@@ -164,46 +169,52 @@ lay$nodesize <- ifelse(is.na(lay$breed_rich), lay$visit_rich, lay$breed_rich)
 
 lay$origin_label <- ifelse(lay$breed_node == T, "Breeding", "Visiting")
 
-p <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
+p2 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
   geom_rect(data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6) +
   geom_edge_link(aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.9) +
   ## Width scale
-  geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(range = c(4,20), breaks = c(1,10,20)) +
+  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, 327)) +
+  geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(
+    limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)) +
   scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
   ggforce::theme_no_axes() + theme(panel.border = element_blank()) + coord_cartesian(ylim=c(min(lay$y)-2, max(lay$y)+1 )) +
   # legends 
   guides(
     edge_width = guide_legend(title="Strength", order = 4),
-    size  = guide_legend(title="Species richness", order = 3),
-    fill = guide_legend(title="Ocean basin", order = 2),
-    color = guide_legend(title="Jurisdiction", order = 1)
+    size       = guide_legend(title="Species richness", order = 3),
+    fill       = guide_legend(title="Ocean basin", order = 2),
+    color      = guide_legend(title="Jurisdiction", order = 1, override.aes = list(size=4))
+  )
+# p2
+
+# full country names
+p2 <- p2 + coord_cartesian(ylim=c(min(lay$y)-2.5, max(lay$y) + 4.5 )) +
+  geom_text(
+    data=subset(lay, breed_node==FALSE),
+    aes(x=x, y=y, label = label),
+    size=4.75,
+    nudge_y = -1,
+    hjust = 0,
+    angle = -45, size = 6
+  ) +
+  geom_richtext(
+    data=subset(lay, breed_node==TRUE),
+    aes(x=x, y=y, label = label),
+    nudge_y = +.5,
+    hjust = 1,
+    angle = -45, size = 6, 
+    label.size = 0, label.r=unit(0.25, "lines"), label.color = NA, fill=alpha("white", 0)
+  ) +
+  ylim(c(-8, max(lay$y)+2)) +
+  # legends
+  theme(
+    legend.text = element_text(size=16),
+    legend.title = element_text(size=16) 
   )
 
+p2 + theme(legend.position = "none")
 
-# dev.new()
-# p +
-#   geom_text(
-#     data=subset(lay, breed_node==FALSE),
-#     aes(x=x, y=y, label = label),
-#     size=4.75,
-#     nudge_y = -1, 
-#     hjust = 0.5,
-#     angle = 0
-#   ) +
-#   geom_label(
-#     data=subset(lay, breed_node==TRUE),
-#     aes(x=x, y=y, label = label),
-#     nudge_y = +1,
-#     hjust = 0.5,
-#     alpha = 0.7, label.size = 0, label.r=unit(0.5, "lines") # label boxes
-#   ) + guides(
-#     size  = guide_legend(title="Species richness"),
-#     edge_width = guide_legend(title="Strength"),
-#     fill = guide_legend(title="Ocean basin"),
-#     color = guide_legend(title="Jurisdiction")
-#   )
-# 
-# 
+
 
 ##Save##
 
@@ -214,6 +225,13 @@ p <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
 # ggsave("figures/test/networks/breed2RFMO_noEDGES.png",
 #   width=40, height=30, units="cm", dpi=250)
 
+if(assign == "UK"){
+  ggsave(paste0(master_figs, "networks/breed2RFMO_top3_nolegendXX.png"),
+    width=40, height=16, units="cm", dpi=250) 
+} else if(assign == "ARG"){
+  ggsave(paste0(master_figs, "figures/ARG_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
+    width=40, height=16, units="cm", dpi=250)
+}
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

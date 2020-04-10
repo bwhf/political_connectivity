@@ -354,6 +354,8 @@ thescale <- scales::trans_breaks("sqrt", function(x) x ^ 2)(min(cellcnt_sum$time
 
 limits <- c(min(cellcnt_sum$timespent), 5*ceiling(max(cellcnt_sum$timespent)/5)) # plot limits, rounding up to nearest 5
 
+plist <- list()
+
 for(i in 1:12){
   print(i)
   onemonth <- dplyr::filter(cellcnt_sum, month == i)
@@ -423,9 +425,11 @@ for(i in 1:12){
     coord_sf(datum = NA) 
   p <- cowplot::plot_grid(p, label_size = 30, labels = month.abb[i])
   p
+  
+  plist[[i]] <- p
 
-  ggsave(sprintf(paste0(master_figs, "test/global_maps/animate/", i,"_timespent_%s.png"), month.abb[i]),
-    plot = p, width=30, height=20, units="cm", dpi=250)
+  # ggsave(sprintf(paste0(master_figs, "test/global_maps/animate/", i,"_timespent_%s.png"), month.abb[i]),
+  #   plot = p, width=30, height=20, units="cm", dpi=250)
   
 }
 

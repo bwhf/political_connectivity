@@ -36,3 +36,31 @@ ggsave("C:/Users/Martim Bill/Desktop/test/plotE11.png", width=70, height=40, uni
 
 dev.new()
 (p1 / p2 + plot_annotation(tag_levels = 'A')) - p3 + plot_annotation(tag_levels = 'A')
+
+
+
+# Networks  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+patch <- p1/p2 + plot_layout(guides = 'collect')
+# ggsave("C:/Users/Martim Bill/Desktop/test/plotF1.png", width=40, height=40, units="cm", dpi=500)
+
+patch + 
+  plot_layout(heights = c(1.75, 1)) + 
+  plot_annotation(tag_levels = 'A') & theme(
+    plot.tag.position = c(0, .95), plot.tag = element_text(size = 35, hjust = 0, vjust = 0),
+    legend.box.just = "left",
+    legend.justification = "left",
+    legend.text.align = 0,
+    legend.title.align = 0
+  )
+
+ggsave("C:/Users/Martim Bill/Desktop/test/plotF10.png", width=41, height=43, units="cm", dpi=500)
+ggsave("C:/Users/Martim Bill/Desktop/test/plotF10.pdf", width=41, height=43, units="cm", dpi=500)
+
+
+# Monthly time spent maps #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+lay <- (plist[[1]] + plist[[2]] + plist[[3]]) / (plist[[4]] + plist[[5]] + plist[[6]]) / (plist[[7]] + plist[[8]] + plist[[9]]) / (plist[[10]] + plist[[11]] + plist[[12]]) + plot_layout(guides = 'collect')
+
+ggsave("C:/Users/Martim Bill/Desktop/test/1H.pdf", plot = lay, width=41, height=43, units="cm", dpi=500)
+

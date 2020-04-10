@@ -1,12 +1,12 @@
-## Network plot of time spent in visited (non-origin countries - highlighting important relationships between origin and non-origin jurisdictios ###)
+## Network plot of time spent in visited (non-origin countries - highlighting important relationships between origin and non-origin jurisdictios ###) ####
 
-pacman::p_load(igraph, ggplot2, tidyverse, ggraph, dplyr, stringr)
+pacman::p_load(igraph, ggplot2, tidyverse, ggraph, dplyr, stringr, ggtext)
 
 
 basin_class <- read.csv("data_test/basin_class_df.csv", stringsAsFactors = F)
 
 
-## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
 # thresh <- "high"
 thresh  <- "low"
 
@@ -151,10 +151,11 @@ boxes <- rbind.data.frame(IboxO, IboxN, PboxO, PboxN, AboxO, AboxN) %>% group_by
   xmin = first(xmin), xmax = first(xmax), ymin = first(ymin), ymax = first(ymax)
 )
 
-
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 # PLOT # 
 ## to plot only top N connections (top 1, 2, etc) for illustrative purposes
 edges_topn <- edgelist_full %>% group_by(origin) %>% arrange(desc(weight)) %>% top_n(5, weight)
+maxweight <- ceiling(max(na.omit(edges_topn$weight)) * 100) # 327
 
 routes_igraph2 <- delete.edges(routes_igraph, which(!E(routes_igraph)$weight %in% edges_topn$weight))
 
@@ -167,11 +168,13 @@ lay$nodesize <- ifelse(is.na(lay$breed_rich), lay$visit_rich, lay$breed_rich)
 lay$origin_label <- ifelse(lay$breed_node == T, "Breeding", "Visiting")
 
 
-p <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
+p1 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
   geom_rect(data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6) +
   geom_edge_link(aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.9) +
   ## Width scale
-  geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(range = c(4,16), breaks = c(1,10,20)) +
+  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, 327)) +
+  geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(
+    limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)) +
   scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
   ggforce::theme_no_axes() + theme(panel.border = element_blank()) +
   # legends 
@@ -179,40 +182,46 @@ p <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
     edge_width = guide_legend(title="Strength", order = 1),
     size  = guide_legend(title="Species richness", order = 2),
     fill = guide_legend(title="Ocean basin", order = 3),
-    color = guide_legend(title="Jurisdiction", order = 4)
+    color = guide_legend(title="Jurisdiction", order = 4, override.aes = list(size=4))
   )
+# p1
 
+# shorten disputed area name 
+lay$label <- ifelse(lay$label == "Disputed (Japan/Russia)", "Japan/Russia", lay$label)
 
 # dev.new()
-# p +
-#   geom_text(
-#     data=subset(lay, label == "High seas"),
-#     aes(x=x, y=y, label = label),
-#     nudge_y = +2,
-#     hjust = 0.5
-#   ) +
-#   geom_text(
-#     data=subset(lay, breed_node==FALSE & label != "High seas"),
-#     aes(x=x, y=y, label = label),
-#     nudge_y = -1.3, 
-#     hjust = 0,
-#     angle = -90
-#   ) +
-#   geom_label(
-#     data=subset(lay, breed_node==TRUE & label != "High seas"),
-#     aes(x=x, y=y, label = label),
-#     nudge_y = +2,
-#     hjust = 0.5,
-#     alpha = 0.7, label.size = 0, label.r=unit(0.5, "lines") # label boxes
-#   ) +
-#   ylim(c(-8, max(lay$y)+2)) +
-#   # legends 
-#   guides(
-#     size  = guide_legend(title="Species richness"),
-#     edge_width = guide_legend(title="Strength"),
-#     fill = guide_legend(title="Ocean basin"),
-#     color = guide_legend(title="Jurisdiction")
-#   )
+p1 <- p1 +
+  geom_text(
+    data=subset(lay, label == "High seas"),
+    aes(x=x, y=y, label = label),
+    nudge_y = +2,
+    hjust = 0.5, size=6
+  ) +
+  geom_text(
+    data=subset(lay, breed_node==FALSE & label != "High seas"),
+    aes(x=x, y=y, label = label),
+    nudge_y = -1.3,
+    # nudge_x = .5,
+    hjust = 0,
+    angle = -45, size = 5.5
+  ) +
+  geom_richtext(
+    data=subset(lay, breed_node==TRUE & label != "High seas"),
+    aes(x=x, y=y, label = label),
+    nudge_y = +1,
+    hjust = 1,
+    angle = -45, size = 6, 
+    label.size = 0, label.r=unit(0.75, "lines"), label.color = NA, fill=alpha("white", 0.7) # label boxes
+  ) +
+  ylim(c(-8, max(lay$y)+2)) +
+  # legends
+  theme(
+    legend.text = element_text(size=16),
+    legend.title = element_text(size=16) 
+  )
+
+p1 + theme(legend.position = "none")
+
 
 ##Save##
 
@@ -223,11 +232,19 @@ p <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
 # ggsave("figures/test/networks/breed2visit_NOEDGES_top5_timeSUM.png",
   # width=40, height=30, units="cm", dpi=250)
 
+if(assign == "UK"){
+  ggsave(paste0(master_figs, "networks/breed2visit_top5_timeSUMX.png"),
+    width=40, height=30, units="cm", dpi=250)
+} else if(assign == "ARG"){
+  ggsave(paste0(master_figs, "ARG_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
+    width=40, height=30, units="cm", dpi=250)
+}
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## abbreviate country names ##
 
-lay$label <- basin_class$abb[match(lay$label, basin_class$jurisdiction)]
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
+## Change country names - shorten or abbreviate ##
+lay$label <- ifelse(lay$label == "Disputed (Japan/Russia)", "Japan/Russia", lay$label)
+
 
 # dev.new()
 p +
