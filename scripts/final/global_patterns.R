@@ -8,7 +8,7 @@ pacman::p_load(dplyr, tidyr, stringr, ggplot2)
 # thresh <- "high"
 thresh  <- "low"
 
-if(thresh == "high"){
+if(thresh == "high") {
   master <- "data/analysis/bird_thresh/"
   master_figs <- "figures/bird_thresh/"
 } else {
@@ -16,29 +16,29 @@ if(thresh == "high"){
   master_figs <- "figures/"
 }
 
-## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Choose whether to analyze UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-assign <- "UK"
-# assign <- "ARG"
+assign <- "A"   #UK and Spain
+# assign <- "B" #Argentina and Morocco
+
 
 PD <- read.csv('data/population_estimates.csv', stringsAsFactors = F) # population data 
 
-if(assign == "UK"){
+if(assign == "A"){
   folder <- paste0(master, "glob_count/")
-} else if(assign == "ARG"){
-  folder <- paste0(master, "ARG_assign/glob_count/")
-  # re-assign birds on disputed islands to Argentina
-  PD$jurisdiction <- ifelse(PD$site_name == "Falkland Islands (Islas Malvinas)" | PD$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", PD$jurisdiction) 
-  PD$origin <- ifelse(PD$site_name == "Falkland Islands (Islas Malvinas)" | PD$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", PD$jurisdiction)
+} else if(assign == "B"){
+  folder <- paste0(master, "sovereign_B_assign/glob_count/")
+  # re-assign birds on disputed islands to Argentina and Morocco
+  PD$jurisdiction <- ifelse(PD$site_name == "Falkland Islands (Islas Malvinas)" | PD$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", 
+    ifelse(PD$site_name == "Chafarinas", "Morocco", PD$jurisdiction))
+  PD$origin <- ifelse(PD$site_name == "Falkland Islands (Islas Malvinas)" | PD$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", ifelse(PD$site_name == "Chafarinas", "Morocco", PD$jurisdiction))
 }
 
 ## Run analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 files <- list.files(folder, full.names = T)
 # files <- files[1:2]
-# do.call("rbind", lapply(files, function(x) ncol(readRDS(x))))
 alltimes <- do.call("rbind", lapply(files, function(x) readRDS(x)))
-
 
 alltimes$is_origin <- ifelse(alltimes$jurisdiction == alltimes$origin, "Breeding", "Visiting")
 
@@ -66,7 +66,6 @@ both <- relations %>% group_by(jurisdiction) %>% filter(relation == "Both") %>% 
 breed <- relations %>% group_by(jurisdiction) %>% filter(relation == "Breeding") %>% summarise( # count of species only breeding
   breedonly_rich  = n_distinct(scientific_name)
 )
-
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,13 +114,17 @@ rich <- rich %>% mutate(
 )
 
 
-## Plot ordered by breeding richness ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Plot ordered by breeding richness ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
+# plots combined in to composites in "patchwork_plots.R" script
+
 # make long format for plotting
 p <- rich %>% top_n(n=15, breed_rich) %>% arrange(desc(breed_rich)) %>% mutate(jurisdiction = factor(jurisdiction, levels=c(jurisdiction))) %>% gather("rich_type", "rich", both_rich, breedonly_rich, visitonly_rich) %>% mutate(rich_type = factor(rich_type, levels=c("visitonly_rich",  "both_rich", "breedonly_rich"))) %>% 
   ggplot(aes(x=jurisdiction, y=rich, fill=rich_type)) + geom_col(color="black") + theme_bw() +
   scale_fill_manual(values = c("grey70","grey35","black"), labels = c(' Visiting', ' Both', ' Breeding')) +
+  # scale_fill_manual(values = c("#fee8c8","#fdbb84","#e34a33"), labels = c(' Visiting', ' Both', ' Breeding')) +
+  # scale_fill_viridis_d(option="cividis", labels = c(' Visiting', ' Both', ' Breeding')) +
   theme(legend.title = element_blank()) 
-
+# p
 p1 <- p + 
   ylab("Richness") +
   theme( 
@@ -133,15 +136,15 @@ p1 <- p +
     legend.text = element_text(size = 30),
     plot.margin = unit(c(0.1,0.1,0.1,0.6), "cm")
   ) + 
-  scale_y_continuous(expand=expand_scale(mult = c(0, .09)))
+  scale_y_continuous(expand=expansion(mult = c(0, .09)))
   # theme(legend.position = "none")
 
 ## SAVE ##
-if(assign == "UK"){
-  ggsave(paste0(master_figs, "barcharts/country_richness_split3_bybreedrichX.png"), width = 13, height = 9)
-} else if(assign == "ARG"){
-  ggsave(paste0(master_figs, "/ARG_assign/barcharts/country_richness_split3_bybreedrichX.png"), width = 13, height = 9)
-}
+# if(assign == "A"){
+#   ggsave(paste0(master_figs, "barcharts/country_richness_split3_bybreedrichX.png"), width = 13, height = 9)
+# } else if(assign == "B"){
+#   ggsave(paste0(master_figs, "sovereign_B_assign/barcharts/country_richness_split3_bybreedrichX.png"), width = 13, height = 9)
+# }
 
 
 ## Plot ordered by TOTAL richness ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,6 +152,7 @@ if(assign == "UK"){
 p <- rich %>% top_n(n=15, richness) %>% arrange(desc(richness)) %>% mutate(jurisdiction = factor(jurisdiction, levels=c(jurisdiction))) %>% gather("rich_type", "rich", both_rich, breedonly_rich, visitonly_rich) %>% mutate(rich_type = factor(rich_type, levels=c("visitonly_rich",  "both_rich", "breedonly_rich"))) %>% 
   ggplot(aes(x=jurisdiction, y=rich, fill=rich_type)) + geom_col(color="black") + theme_bw() +
   scale_fill_manual(values = c("grey70","grey35","black"), labels = c(' Visiting', ' Both', ' Breeding')) +
+  # scale_fill_manual(values = c("#fee8c8","#fdbb84","#e34a33"), labels = c(' Visiting', ' Both', ' Breeding')) +
   theme(    
     legend.title = element_blank(),
     legend.text.align = 0,
@@ -166,16 +170,16 @@ p2 <- p +
     legend.text = element_text(size = 30),
     plot.margin = unit(c(0.1,0.1,0.1,0.5), "cm")
   ) + 
-  scale_y_continuous(expand=expand_scale(mult = c(0, .09)))
+  scale_y_continuous(expand=expansion(mult = c(0, .09)))
   # theme(legend.position = "none")
 
 
 ## SAVE ##
-if(assign == "UK"){
-  ggsave(paste0(master_figs, "barcharts/country_richness_split3_bytotalrichX.png"), width = 13, height = 9)
-} else if(assign == "ARG"){
-  ggsave(paste0(master_figs, "ARG_assign/barcharts/country_richness_split3_bytotalrichX.png"), width = 13, height = 9)
-}
+# if(assign == "A"){
+#   ggsave(paste0(master_figs, "barcharts/country_richness_split3_bytotalrichX.png"), width = 13, height = 9)
+# } else if(assign == "B"){
+#   ggsave(paste0(master_figs, "sovereign_B_assign/barcharts/country_richness_split3_bytotalrichX.png"), width = 13, height = 9)
+# }
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -188,14 +192,6 @@ x <- alltimes %>% group_by(scientific_name, adj_site_name, month, is_origin, jur
   tot_staying = sum(na.omit(tot_atatime)) / 12
 )
 
-# x <- alltimes %>% group_by(scientific_name, adj_site_name, month, is_origin, jurisdiction) %>% summarise(
-#   tot_atatime = first(tot_atatime)
-# ) %>% group_by(scientific_name, adj_site_name, is_origin, jurisdiction) %>% summarise( 
-#     tot_staying = sum(na.omit(tot_atatime)) / 12
-# ) %>% group_by(is_origin, jurisdiction) %>% summarise( 
-#   tot_staying = sum(na.omit(tot_staying))
-# )
-
 sum(x$tot_staying) ## total bird years estimated by our tracking datas (pop coverage - annual time coverage)
 
 timespentsum <- x %>% group_by(jurisdiction) %>% summarise(sum_tot_staying = sum(na.omit(tot_staying))) %>% left_join(x)
@@ -207,39 +203,6 @@ other$sum_tot_staying <- rep(sum(other$tot_staying))
 
 time <- timespentsum %>% mutate(jurisdiction = if_else(sum_tot_staying < ((glob_cover$glob_tot) * 0.001), "Other", jurisdiction)) %>% filter(jurisdiction != "Other") %>% bind_rows(other) 
 
-
-p <- time %>% top_n(n=20, sum_tot_staying) %>% arrange(desc(sum_tot_staying)) %>% mutate(
-  jurisdiction = factor(jurisdiction, levels=c(unique(jurisdiction[jurisdiction != "Other"]), "Other"))) %>% 
-  ggplot(aes(x=reorder(jurisdiction, desc(jurisdiction)), y=tot_staying/1000000, fill=is_origin)) + geom_col(color="black", position = position_stack(reverse = TRUE)) +
-  theme_bw() +
-  scale_fill_manual(values = c("black","grey70"), labels = c(' Breeding',' Visiting')) +
-  theme(
-    legend.title = element_blank(),
-    legend.text.align = 0,
-    legend.text = element_text(size = 18)
-    ) +
-  ylab("Bird year (millions)") + 
-  xlab("")
-
-p <- p + theme( 
-  text = element_text(size=14),
-  # axis.text.x = element_text( angle = 90, hjust = 1, vjust=0.3, size = 16),
-  axis.text.x = element_text( angle = 0, hjust=.5, size = 25),
-  axis.text.y = element_text(size = 25),
-  axis.title = element_text(size = 28),
-  axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 0, l = 0))
-) + 
-  scale_y_continuous(expand=expand_scale(mult = c(0, .09))) + 
-  coord_flip() +
-  theme(legend.position = "none")
-
-## SAVE ##
-if(assign == "UK"){
-  ggsave(paste0(master_figs, "barcharts/country_abundance_byTIMESPENT_birdyears_AVG.png"), width = 10, height = 11)
-} else if(assign == "ARG"){
-  ggsave(paste0(master_figs, "ARG_assign/barcharts/country_abundance_byTIMESPENT_birdyears_AVG.png"), width = 10, height = 11)
-}
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Horizontal time spent plot 
 p3 <- time %>% top_n(n=20, sum_tot_staying) %>% arrange(sum_tot_staying) %>% mutate(
@@ -247,6 +210,7 @@ p3 <- time %>% top_n(n=20, sum_tot_staying) %>% arrange(sum_tot_staying) %>% mut
   ggplot(aes(x=reorder(jurisdiction, desc(jurisdiction)), y=tot_staying/1000000, fill=is_origin)) + geom_col(color="black", position = position_stack(reverse = TRUE)) +
   theme_bw() +
   scale_fill_manual(values = c("black","grey70"), labels = c(' Breeding',' Visiting')) +
+  # scale_fill_manual(values = c("#fee8c8","#e34a33"), labels = c(' Visiting', ' Breeding')) +
   theme( 
     axis.text.x = element_text( angle = 45, hjust=1, size = 30),
     axis.text.y = element_text(size = 30),
@@ -257,9 +221,43 @@ p3 <- time %>% top_n(n=20, sum_tot_staying) %>% arrange(sum_tot_staying) %>% mut
     legend.text = element_text(size = 30),
     plot.margin = unit(c(0.1,0.1,0.1,1), "cm")
   ) + 
-  scale_y_continuous(expand=expand_scale(mult = c(0, .09))) +
+  scale_y_continuous(expand=expansion(mult = c(0, .09))) +
   ylab("Bird year (millions)") + 
   theme(legend.position = "none")
+
+## Vertical time spent plot #~~~~~~~~~~~~~~~~
+# p <- time %>% top_n(n=20, sum_tot_staying) %>% arrange(desc(sum_tot_staying)) %>% mutate(
+#   jurisdiction = factor(jurisdiction, levels=c(unique(jurisdiction[jurisdiction != "Other"]), "Other"))) %>% 
+#   ggplot(aes(x=reorder(jurisdiction, desc(jurisdiction)), y=tot_staying/1000000, fill=is_origin)) + geom_col(color="black", position = position_stack(reverse = TRUE)) +
+#   theme_bw() +
+#   scale_fill_manual(values = c("black","grey70"), labels = c(' Breeding',' Visiting')) +
+#   theme(
+#     legend.title = element_blank(),
+#     legend.text.align = 0,
+#     legend.text = element_text(size = 18)
+#     ) +
+#   ylab("Bird year (millions)") + 
+#   xlab("")
+# 
+# p <- p + theme( 
+#   text = element_text(size=14),
+#   # axis.text.x = element_text( angle = 90, hjust = 1, vjust=0.3, size = 16),
+#   axis.text.x = element_text( angle = 0, hjust=.5, size = 25),
+#   axis.text.y = element_text(size = 25),
+#   axis.title = element_text(size = 28),
+#   axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 0, l = 0))
+# ) + 
+#   scale_y_continuous(expand=expand_scale(mult = c(0, .09))) + 
+#   coord_flip() +
+#   theme(legend.position = "none")
+
+## SAVE ##
+# if(assign == "A"){
+#   ggsave(paste0(master_figs, "barcharts/country_abundance_byTIMESPENT_birdyears_AVG.png"), width = 10, height = 11)
+# } else if(assign == "B"){
+#   ggsave(paste0(master_figs, "sovereign_B_assign/barcharts/country_abundance_byTIMESPENT_birdyears_AVG.png"), width = 10, height = 11)
+# }
+
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Create table summarizing richness and timespent values per jurisdiction
@@ -276,10 +274,16 @@ sum2save <- timespentsum %>% spread(is_origin, tot_staying) %>%
 sum2save
 
 ## SAVE ##
-if(assign == "UK"){
+
+if(thresh == "high"){
   write.csv(sum2save, paste0(master, "summary_tables/richness_visit_per_jur.csv"), row.names = F)
-} else if(assign == "ARG"){
-  write.csv(sum2save, paste0(master, "ARG_assign/summary_tables/richness_visit_per_jur.csv"), row.names = F)
+  
+} else if(thresh == "low"){
+  
+  if(assign == "A"){
+    write.csv(sum2save, paste0(master, "summary_tables/richness_visit_per_jur.csv"), row.names = F)
+  } else if(assign == "B"){
+    write.csv(sum2save, paste0(master, "sovereign_B_assign/summary_tables/richness_visit_per_jur.csv"), row.names = F)
+  }
   
 }
-

@@ -5,7 +5,7 @@
 
 # --- Scripts work by calling bespoke functions for each analytical step --- #
 
-pacman::p_load(dpylr, sp, raster, stringr, ggplot2)
+pacman::p_load(dplyr, sp, raster, stringr, ggplot2)
 
 ## FILTER/CLEANING STEPS ## --------------------------------------------------
 
@@ -22,8 +22,16 @@ outFolder <- "data/analysis/all_TD/"
 
 islgrp_names <- data.table::fread("data/standard_site_names.csv")
 
-report_df <- prep(inFolder=inFolder, standard=islgrp_names, outFolder=outFolder)
+report_df1 <- prep(inFolder=inFolder, standard=islgrp_names, outFolder=outFolder)
 
+report_df2 <- report_df1 %>% group_by(scientific_name, site_name) %>% summarise(
+  perc_pnts_rmvd = first(perc_pnts_rmvd),
+  n_pnts_rmvd = first(n_pnts_rmvd),
+  mn_perc_pnts_rmvd = mean(perc_pnts_rmvd),
+  sum_pnts_rmvd     = sum(as.numeric(n_pnts_rmvd))
+) %>% dplyr::select(scientific_name, site_name, mn_perc_pnts_rmvd, sum_pnts_rmvd)
+
+write.csv(report_df2, "data/analysis/summary_tables/points_rmvd_step1.csv", row.names = F)
 
 # Step 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Hard filter of equinox periods for GLS data (+/- 21/7 days before or after) ####
@@ -91,7 +99,8 @@ files <- list.files(folder)
 # species <- "Calonectris diomedea"
 # files <- files[str_detect(files, species)]
 
-repo <- "figures/test/annual_coverage_spp.site/" 
+# repo <- "figures/test/annual_coverage_spp.site/" 
+repo <- "figures/sp.site_annual_coverage/" 
 
 annualCover_plot(files=files, inFolder = folder, byYear = F, savePlot = T, saveFolder = repo)
 
@@ -105,6 +114,7 @@ annualCover_plot(files=files, inFolder = folder, byYear = F, savePlot = T, saveF
 source("scripts/final/source_fxns/overJur_fxn.R")
 
 folder <- "data/analysis/month_filtered/"
+# folder <- "data_test/month_filtered/"
 
 files <- list.files(folder)
 
@@ -115,10 +125,12 @@ files <- list.files(folder)
 
 # EEZ analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 out <- "data/analysis/oveez/"
-## Unioned land and EEZ dataset ## (http://www.marineregions.org/downloads.php)
-eez_cnt <- raster::shapefile("spatial_data/shapefiles_EEZ_countries/union_countries_EEZs/EEZ_land_v2_201410_FIX_wlandlocked.shp")
+# out <- "data_test/oveez/"
 
-overJur(inFolder = folder, files=NULL, over_which = "EEZ", spatial = eez_cnt, filter_landlocked=TRUE, assign="UK", outFolder = out)
+## Unioned land and EEZ dataset ## (http://www.marineregions.org/downloads.php)
+eez_cnt <- raster::shapefile("spatial_data/shapefiles_EEZ_countries/union_countries_EEZs/EEZ_Land_v3_202030.shp", use_iconv = TRUE, encoding = "UTF-8")
+
+overJur(inFolder = folder, files=NULL, over_which = "EEZ", spatial = eez_cnt, filter_landlocked=TRUE, assign="A", outFolder = out)
 
 
 # RFMO analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,10 +158,10 @@ for(i in 1:length(files)){
   one <- readRDS(files[i])
   one.f <- dplyr::filter(one, jur == "High seas")
   # print(paste(nrow(one), "-->", nrow(one.f), "pnts"))
-  saveRDS(one.f, paste(out, filename[i]))
+  saveRDS(one.f, paste0(out, filename[i]))
 }
 
-# now use High seas points only for RFMO analysis ~~~~~~
+# now filter to only High seas points for RFMO analysis ~~~~~~
 ins <- "data/analysis/oveez_hs/"
 main <- "data/analysis/ovrfmo/"
 outs <- paste0(list.files(main, full.names = T, recursive = F), "/") # need to have one folder for each RFMO
@@ -173,6 +185,8 @@ source("scripts/final/source_fxns/birddays_fxn.R")
 # EEZ analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 folder <- "data/analysis/oveez/"
 out    <- "data/analysis/birddays_eez/"
+# folder <- "data_test/oveez/"
+# out    <- "data_test/birddays_eez/"
 
 
 birddays(inFolder = folder, by = "month", outFolder = out)

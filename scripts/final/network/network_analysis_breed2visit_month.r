@@ -2,13 +2,12 @@
 
 pacman::p_load(igraph, ggplot2, tidyverse, ggraph, dplyr, stringr, ggtext)
 
-
-basin_class <- read.csv("data_test/basin_class_df.csv", stringsAsFactors = F)
+basin_class <- read.csv("data/basin_class_df.csv", stringsAsFactors = F)
 
 
 ## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
-# thresh <- "high"
-thresh  <- "low"
+thresh <- "high"
+# thresh  <- "low"
 
 if(thresh == "high"){
   master <- "data/analysis/bird_thresh/"
@@ -19,13 +18,13 @@ if(thresh == "high"){
 }
 
 ## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-assign <- "UK"
-# assign <- "ARG"
+assign <- "A"
+# assign <- "B"
 
-if(assign == "UK"){
+if(assign == "A"){
   folder <- paste0(master, "glob_count/")
-} else if(assign == "ARG"){
-  folder <- paste0(master, "ARG_assign/glob_count/")
+} else if(assign == "B"){
+  folder <- paste0(master, "sovereign_B_assign/glob_count/")
 
 }
 
@@ -155,7 +154,7 @@ boxes <- rbind.data.frame(IboxO, IboxN, PboxO, PboxN, AboxO, AboxN) %>% group_by
 # PLOT # 
 ## to plot only top N connections (top 1, 2, etc) for illustrative purposes
 edges_topn <- edgelist_full %>% group_by(origin) %>% arrange(desc(weight)) %>% top_n(5, weight)
-maxweight <- ceiling(max(na.omit(edges_topn$weight)) * 100) # 327
+maxweight <- ceiling(max(na.omit(edges_topn$weight)) * 100) # 335
 
 routes_igraph2 <- delete.edges(routes_igraph, which(!E(routes_igraph)$weight %in% edges_topn$weight))
 
@@ -172,7 +171,7 @@ p1 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
   geom_rect(data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6) +
   geom_edge_link(aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.9) +
   ## Width scale
-  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, 327)) +
+  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, maxweight)) +
   geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(
     limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)) +
   scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
@@ -187,8 +186,9 @@ p1 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
 # p1
 
 # shorten disputed area name 
-lay$label <- ifelse(lay$label == "Disputed (Japan/Russia)", "Japan/Russia", lay$label)
-
+lay$label <- ifelse(lay$label == "Disputed Japan/Russia", "(Japan/Russia)", 
+  ifelse(lay$label == "Disputed Mauritius/United Kingdom", "(Mauritius/UK)", lay$label)
+)
 # dev.new()
 p1 <- p1 +
   geom_text(
@@ -232,18 +232,18 @@ p1 + theme(legend.position = "none")
 # ggsave("figures/test/networks/breed2visit_NOEDGES_top5_timeSUM.png",
   # width=40, height=30, units="cm", dpi=250)
 
-if(assign == "UK"){
+if(assign == "A"){
   ggsave(paste0(master_figs, "networks/breed2visit_top5_timeSUMX.png"),
     width=40, height=30, units="cm", dpi=250)
-} else if(assign == "ARG"){
-  ggsave(paste0(master_figs, "ARG_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
+} else if(assign == "B"){
+  ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
     width=40, height=30, units="cm", dpi=250)
 }
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
 ## Change country names - shorten or abbreviate ##
-lay$label <- ifelse(lay$label == "Disputed (Japan/Russia)", "Japan/Russia", lay$label)
+# lay$label <- ifelse(lay$label == "Disputed (Japan/Russia)", "(Japan/Russia)", lay$label)
 
 
 # dev.new()
@@ -283,11 +283,11 @@ p +
 
 
 ## SAVE ##
-if(assign == "UK"){
+if(assign == "A"){
   ggsave(paste0(master_figs, "networks/breed2visit_top5_timeSUM_abbX.png"),
     width=40, height=30, units="cm", dpi=250)
-} else if(assign == "ARG"){
-  ggsave(paste0(master_figs, "ARG_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
+} else if(assign == "B"){
+  ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
     width=40, height=30, units="cm", dpi=250)
 }
 
@@ -300,12 +300,12 @@ edges_topn_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = first
 
 edgelist_full_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = first(breed_rich)) %>% right_join(edgelist_full, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
 
-if(assign == "UK"){
+if(assign == "A"){
   write.csv(edges_topn_summ, paste0(master, "summary_tables/network_topconnex_country2country.csv"), row.names = F)
   write.csv(edgelist_full_summ, paste0(master, "summary_tables/network_allconnex_country2country.csv"), row.names = F)
-} else if(assign == "ARG"){
-  write.csv(edges_topn_summ, paste0(master, "ARG_assign/summary_tables/network_topconnex_country2country.csv"), row.names = F)
-  write.csv(edgelist_full_summ, paste0(master, "ARG_assign/summary_tables/network_allconnex_country2country.csv"), row.names = F)
+} else if(assign == "B"){
+  write.csv(edges_topn_summ, paste0(master, "sovereign_B_assign/summary_tables/network_topconnex_country2country.csv"), row.names = F)
+  write.csv(edgelist_full_summ, paste0(master, "sovereign_B_assign/summary_tables/network_allconnex_country2country.csv"), row.names = F)
 }
 
 

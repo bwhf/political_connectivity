@@ -46,7 +46,7 @@ PD <- read.csv('data/population_estimates.csv', stringsAsFactors = F)
 PD$spp_site <- paste(PD$scientific_name, PD$standard_site_name)
 alltimes$spp_site <- paste(alltimes$scientific_name, alltimes$adj_site_name)
 
-#filter to only spp-site combos which we have tracking data for 
+# filter to only spp-site combos which we have tracking data for 
 PD <- PD[which(PD$spp_site %in% unique(alltimes$spp_site)),] %>% mutate(prop_global_pop = (pop_estimate_IND/global_pop_estimate_IND)) 
 
 
@@ -75,10 +75,9 @@ sum(sp_cover$glob_ann_time)/ (sum(sp_cover$glob_pop) + 15848) # global total + S
 mean(sp_cover$glob_pop_cov)   # average coverage of global breeding population for each species
 sum(sp_cover$glob_pop_cov)/40 # average including S. Royal Albatross (no data)
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # table of perc. time spent in ABNJ, EEZ, and what is unknown
-
-
 
 visitsum <- alltimes %>% group_by(scientific_name, adj_site_name, month, jurisdiction) %>% summarise(
   globprop = first(globprop)) %>% group_by(scientific_name, jurisdiction) %>% summarise(
@@ -93,7 +92,6 @@ abnj <- visitsum %>% filter(jurisdiction == "High seas") %>% arrange(desc(glob_a
 # sp2 <- unique(abnj$scientific_name)
 #
 # sp1[!sp1 %in% sp2] # D. epomorphora doesn't have enough data to show this
-
 
 # proportion of time spent in EEZ waters 
 nation <- visitsum %>% filter(jurisdiction != "High seas") %>% arrange(desc(glob_ann_prop)) %>% group_by(scientific_name) %>% summarise(

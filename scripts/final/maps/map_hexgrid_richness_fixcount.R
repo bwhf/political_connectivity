@@ -25,21 +25,21 @@ if(thresh == "high"){
 }
 
 #### UK or Argentina assignment of Falklands/S.Georgia breeding birds ? ####
-assign <- "UK"
-# assign <- "ARG"
+assign <- "A"
+# assign <- "B"
 
 #### visiting or true richness grid? ####
 
 visit_rich = FALSE
 
 
-if(assign=="UK"){
+if(assign=="A"){
   if(visit_rich == TRUE){
     grid <- readRDS(paste0(master, "glob_hexgrid/global_hexgrid_452km_vrich.rds"))  # load grid excluding points w/in origin countries (visit rich.)
   } else {
     grid <- readRDS(paste0(master, "glob_hexgrid/global_hexgrid_452km_trich.rds"))  # load grid with all points (true richness/fixcount)
   }
-} else if(assign=="ARG"){
+} else if(assign=="B"){
   if(visit_rich == TRUE){
     grid <- readRDS(paste0(master, "ARG_assign/glob_hexgrid/global_hexgrid_452km_vrich.rds"))  # load grid excluding points w/in origin countries (visit rich.)
   } else {
@@ -105,13 +105,14 @@ re_world <- recentre(world, shift) %>% group_by(sovereignt) %>% summarize() # re
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #### Re-center EEZ boundaries data ####
 
-# eez_cnt <- st_as_sf( raster::shapefile("data_test/shapefiles_EEZ_countries/union_countries_EEZs/EEZ_land_v2_201410.shp" ) )  # EEZ-land union data doesn't work
-x <- st_as_sf( raster::shapefile("data_test/geodata/World_EEZ_v10_20180221_HR_0_360/World_EEZ_boundaries_v10_2018_0_360.shp") ) # just EEZ data (latest version (2018))
+# x <- st_as_sf( raster::shapefile("C:/Users/Martim Bill/Documents/geodata/world_EEZ_v11/eez_boundaries_v11_0_360.shp") ) # just EEZ lines data (latest version (2019))
+x <- st_as_sf( raster::shapefile("spatial_data/shapefiles_EEZ_countries/union_countries_EEZs/EEZ_Land_v3_202030.shp") ) # EEZ-land union data (latest version (2019))
 
 eez_cnt <- rmapshaper::ms_simplify(x, keep = .01) # simplify dataset to make smaller
 all(st_is_valid(eez_cnt))
 
-re_eez <- recentre(eez_cnt, shift) %>% group_by(Line_ID) %>% summarize()          # recenter and remove old seam
+# re_eez <- recentre(eez_cnt, shift) %>% group_by(Line_ID) %>% summarize()          # recenter and remove old seam
+re_eez <- recentre(eez_cnt, shift) %>% group_by(MRGID_EEZ) %>% summarize()          # recenter and remove old seam (doesn;t work for this data set )
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -148,7 +149,7 @@ outline_prj   <- lwgeom::st_transform_proj(outline, crs = proj, use_gdal = FALSE
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Species richness (visiting or absolute, depending on filtering)
-p <- ggplot() + theme_nothing() + # gets rid of gray box behind map
+m2 <- ggplot() + theme_nothing() + # gets rid of gray box behind map
   geom_sf(data = outline_prj, color = NA, fill = "black") +                # background ocean polygon
   # geom_sf(data = outline_prj, cocor = NA, fill = "white") +
   geom_sf(data = re_grid_wt, aes(fill=richness), color=NA) +
@@ -157,10 +158,10 @@ p <- ggplot() + theme_nothing() + # gets rid of gray box behind map
   # scale_fill_carto_c(type = "quantitative", palette = "DarkMint", breaks=c(1, 5, 10, 15, signif(max(re_grid_wt$richness),1)), direction = -1) +
   # scale_fill_continuous_sequential(palette = "Blues", breaks=c(1, 5, 10, 15, signif(max(re_grid_wt$richness),1))) + # single hue color palette
   scale_fill_continuous_sequential(palette = "Lajolla", breaks=c(1, 5, 10, 15, signif(max(re_grid_wt$richness),1))) +
-  geom_sf(data = re_eez_wt, fill="grey",  color="grey50") +        # EEZ borders
+  geom_sf(data = re_eez_wt, fill=NA,  color="grey50") +        # EEZ borders
   # geom_sf(data = re_eez_wt, fill="grey",  color="grey30") +        # EEZ borders
   # geom_sf(data = re_eez_wt, fill="grey",  color="black") +
-  geom_sf(data = re_world_wt, fill="grey30", color="grey30") +
+  geom_sf(data = re_world_wt, fill="grey40", color="grey40") +
   # geom_sf(data = re_world_wt, fill="grey55", color="grey25") +                # country polygons
   # geom_sf(data = re_world_wt, fill="grey85", color="grey85") +                # country polygons
   # geom_sf(data = re_world_wt, fill="grey85", color=NA) +                # country polygons
@@ -176,7 +177,8 @@ p <- ggplot() + theme_nothing() + # gets rid of gray box behind map
     plot.margin=unit(c(0,0,0,0),"cm"),
     # legend.position="bottom",
     legend.direction = "horizontal",
-    legend.position=c(0.01, 0),
+    # legend.position=c(0.01, 0), # legend bottom left
+    legend.position=c(0.80, 0),   # legend bottom right
     legend.justification = "left",
     legend.title=element_text(size=18),
     legend.text = element_text(size = 16)
@@ -184,9 +186,9 @@ p <- ggplot() + theme_nothing() + # gets rid of gray box behind map
   coord_sf(datum = NA)
 # 
 # dev.new()
-# p
+# m2
 
-ggsave( "C:/Users/Martim Bill/Desktop/test/plot30.png", plot = p, width=30, height=20, units="cm", dpi=250)
+ggsave( "C:/Users/Martim Bill/Desktop/test/plot32.png", plot=m2, width=30, height=20, units="cm", dpi=250)
 
 ## Decide where to save ##
 if(assign=="UK"){
@@ -229,7 +231,7 @@ cols_sf <- st_as_sf(cols, coords = c("lon_colony", "lat_colony"), crs = 4326)
 re_cols <- recentre(cols_sf, shift)
 re_cols_prj   <- lwgeom::st_transform_proj(re_cols, crs = proj, use_gdal = FALSE)
 
-p <- ggplot()  +
+m1 <- ggplot()  +
   theme_nothing() +
   geom_sf(data = outline_prj, color = NA, fill = "black") +
   geom_sf(data = re_grid_wt, aes(fill= fixcount ), color=NA) +
@@ -237,13 +239,13 @@ p <- ggplot()  +
   scale_fill_continuous_sequential(rev=T, palette = "Oslo", trans="log10", breaks=scales::trans_breaks("log10", function(x) 10^x)
     #,trans  ="sqrt", breaks = scales::trans_breaks("sqrt", function(x) x ^ 2)
     ) +
-  geom_sf(data = re_cols_prj, color = "red", size=3.5, pch=21, fill=alpha("white", 0.3), stroke = 1) +
+  geom_sf(data = re_cols_prj, color = "red", size=3.5, pch=21, fill=NA, stroke = 1) +
   # geom_sf(data = re_eez_wt, fill="grey", color="white") +
-  geom_sf(data = re_world_wt, fill="grey30", color="grey30") +
+  geom_sf(data = re_world_wt, fill="grey40", color="grey40") +
   guides( fill = guide_colorbar(title="Fixes")  ) +
   guides( 
     fill = guide_colorbar(
-      title="Fix count",
+      title="N points",
       title.position="top",
       barwidth  = 8,
       barheight = 1.5,
@@ -253,7 +255,8 @@ p <- ggplot()  +
     plot.margin=unit(c(0,0,0,0),"cm"),
     # legend.position="bottom",
     legend.direction = "horizontal",
-    legend.position=c(0.01, 0),
+    # legend.position=c(0.01, 0),
+    legend.position=c(0.80, 0),   # legend bottom right
     legend.justification = "left",
     legend.title=element_text(size=18),
     legend.text = element_text(size = 15)

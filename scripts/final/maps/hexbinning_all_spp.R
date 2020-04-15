@@ -8,8 +8,8 @@
 pacman::p_load(dggridR, sf, tidyverse)
 
 ## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-thresh <- "high"
-# thresh <- "low"
+# thresh <- "high"
+thresh <- "low"
 
 if(thresh == "high"){
   master <- "data/analysis/bird_thresh/"
@@ -21,20 +21,19 @@ if(thresh == "high"){
 
 
 ## Choose which country to assign Falklands/S.Georgia breeders too ~~~~~~~~~~
-assign <- "UK"
-# assign <- "ARG"
+assign <- "A"
+# assign <- "B"
 
 # use popData sheet to associate site_name in TD to an origin country (ONLY GOOD FOR MEASURES OF VISITATION)
 popData <- read.csv('data_test/population_estimates.csv', stringsAsFactors = F)
 
 ## change assignment of birds breeding in disputed areas 
-if(assign == "UK"){
+if(assign == "A"){
   folder <- paste0(master, "data/analysis/glob_count/")
-} else if(assign == "ARG"){
-  folder <- paste0(master, "data/analysis/ARG_assign/glob_count/")
-  # re-assign birds on disputed islands to Argentina
-  popData$jurisdiction <- ifelse(popData$site_name == "Falkland Islands (Islas Malvinas)" | popData$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", popData$jurisdiction) 
-  popData$origin <- ifelse(popData$site_name == "Falkland Islands (Islas Malvinas)" | popData$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", popData$jurisdiction)
+} else if(assign == "B"){
+  popData$jurisdiction <- ifelse(popData$site_name == "Falkland Islands (Islas Malvinas)" | popData$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", 
+    ifelse(popData$site_name == "Chafarinas", "Morocco", popData$jurisdiction))
+  popData$origin <- ifelse(popData$site_name == "Falkland Islands (Islas Malvinas)" | popData$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", ifelse(popData$site_name == "Chafarinas", "Morocco", popData$jurisdiction))
 }
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~``
@@ -133,16 +132,16 @@ if(by_month == TRUE){
   
   if(visit_rich==TRUE){
     
-    if(assign=="UK"){
+    if(assign=="A"){
       saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_452km_vrich.rds"))
-    } else if(assign=="ARG"){
+    } else if(assign=="B"){
       saveRDS(grid, paste0(master, "glob_hexgrid/glob_hexgrid/global_hexgrid_452km_vrich.rds"))
     }
   } else {
-    if(assign=="UK"){
+    if(assign=="A"){
       saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_452km_trich.rds"))
-    } else if(assign=="ARG"){
-      saveRDS(grid, paste0(master, "ARG_assign/glob_hexgrid/global_hexgrid_452km_trich.rds"))
+    } else if(assign=="B"){
+      saveRDS(grid, paste0(master, "sovereign_B_assign/glob_hexgrid/global_hexgrid_452km_trich.rds"))
     }
   }
   

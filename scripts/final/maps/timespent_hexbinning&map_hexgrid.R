@@ -21,23 +21,23 @@ if(thresh == "high"){
 
 ## Choose which country to assign Falklands/S.Georgia breeders too ~~~~~~~~~~
 
-assign <- "UK"
-# assign <- "ARG"
+assign <- "A"
+# assign <- "B"
 
 popData <- read.csv('data/population_estimates.csv', stringsAsFactors = F)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-if(assign == "UK"){
+if(assign == "A"){
   # inFolder <- paste0(master, 'noeqx_dnsmpl/')
   inFolder <- paste0(master, 'month_filtered/')
-} else if(assign == "ARG"){
-  # inFolder <- paste0(master, 'ARG_assign/noeqx_dnsmpl/')
-  inFolder <- paste0(master, 'ARG_assign/month_filtered/')
+} else if(assign == "B"){
+  inFolder <- paste0(master, 'sovereign_B_assign/month_filtered/')
   # re-assign birds on disputed islands to Argentina
-  popData$jurisdiction <- ifelse(popData$site_name == "Falkland Islands (Islas Malvinas)" | popData$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", popData$jurisdiction) 
-  popData$origin <- ifelse(popData$site_name == "Falkland Islands (Islas Malvinas)" | popData$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", popData$jurisdiction)
+  popData$jurisdiction <- ifelse(popData$site_name == "Falkland Islands (Islas Malvinas)" | popData$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", 
+    ifelse(popData$site_name == "Chafarinas", "Morocco", popData$jurisdiction))
+  popData$origin <- ifelse(popData$site_name == "Falkland Islands (Islas Malvinas)" | popData$site_name == "South Georgia (Islas Georgias del Sur)", "Argentina", ifelse(popData$site_name == "Chafarinas", "Morocco", popData$jurisdiction))
 }
 
 files <- list.files(inFolder)
@@ -145,8 +145,6 @@ grid <- merge(grid, cellcnt_sum, by.x="cell")
 saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_452km_timespent.rds"))
 
 
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Make map ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -191,8 +189,9 @@ x <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf") # load co
 world <- rmapshaper::ms_simplify(x, keep = 0.99)
 
 # EEZs ~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-x <- st_as_sf( raster::shapefile("data_test/geodata/World_EEZ_v10_20180221_HR_0_360/World_EEZ_boundaries_v10_2018_0_360.shp") ) # just EEZ data (latest version (2018))
 
+x <- st_as_sf( raster::shapefile("C:/Users/Martim Bill/Documents/geodata/world_EEZ_v11/eez_boundaries_v11_0_360.shp") ) # just EEZ data (latest version (2019))
+x <- st_as_sf( raster::shapefile("spatial_data/shapefiles_EEZ_countries/union_countries_EEZs/EEZ_Land_v3_202030.shp") ) # EEZ-land union data (latest version (2019))
 eez_cnt <- rmapshaper::ms_simplify(x, keep = .01) # simplify dataset to make smaller
 # all(st_is_valid(eez_cnt))
 
@@ -212,7 +211,9 @@ outline <-
   ) %>% st_sf()
 
 # re-center data sets ~~~~~~~~~~~~ 
-re_eez <- recentre(eez_cnt, shift) %>% group_by(Line_ID) %>% summarize()    
+# re_eez <- recentre(eez_cnt, shift) %>% group_by(Line_ID) %>% summarize()          # for just EEZ lines data set (seam removal works)
+re_eez <- recentre(eez_cnt, shift) %>% group_by(MRGID_EEZ) %>% summarize()          # seam removeal doesn't work for eez-land union
+
 re_grid <- recentre(grid.sf, shift) %>% group_by(cell) %>% summarise(  # recenter grid! 
   timespent = first(timespent)
 )
@@ -228,7 +229,7 @@ outline_prj   <- lwgeom::st_transform_proj(outline, crs = proj, use_gdal = FALSE
 
 
 ## Map
-p <- ggplot() +
+m3 <- ggplot() +
   cowplot::theme_nothing() +
   geom_sf(data = outline_prj, color = NA, fill = "black") +
   # geom_sf(data = outline_prj, color = NA, fill = "white") +
@@ -247,8 +248,8 @@ p <- ggplot() +
   #   breaks = scales::trans_breaks("sqrt", function(x) x ^ 2),
   #   labels = function(x) round(x, 1)
   #   ) + # single hue color palette
-  geom_sf(data = re_eez_prj, fill="grey",  color="grey50") +        # EEZ borders
-  geom_sf(data = re_world_prj, fill="grey30", color="grey30") +
+  geom_sf(data = re_eez_prj, fill=NA,  color="grey50") +        # EEZ borders
+  geom_sf(data = re_world_prj, fill="grey40", color="grey40") +
   # geom_sf(data = re_world_wt, fill="grey55", color="grey25") +                # country polygons
   # geom_sf(data = re_world_wt, fill="grey85", color="grey85") +                # country polygons
   guides(
@@ -264,24 +265,25 @@ p <- ggplot() +
     plot.margin=unit(c(0,0,0,0),"cm"),
     # legend.position="bottom",
     legend.direction = "horizontal",
-    legend.position=c(0.01, 0),
+    # legend.position=c(0.01, 0),
+    legend.position=c(0.80, 0),   # legend bottom right
     legend.justification = "left",
     legend.title=element_text(size=17),
     legend.text = element_text(size = 16)
   ) +
   coord_sf(datum = NA) 
 # dev.new()
-# p
+# m3
 
-ggsave( "C:/Users/Martim Bill/Desktop/test/plotB10.png", plot = p, width=30, height=20, units="cm", dpi=250)
+ggsave( "C:/Users/Martim Bill/Desktop/test/plotB11.png", plot = m3, width=30, height=20, units="cm", dpi=250)
 
 
 ## SAVE ##
-if(assign == "UK"){
+if(assign == "A"){
   ggsave(paste0(master_figs, "maps/birdYEAR_global_kav7_pacific_infernoX.png"),
     width=30, height=20, units="cm", dpi=250)
-} else if(assign=="ARG"){
-  ggsave(paste0(master_figs, "figures/ARG_assign/maps/birdYEAR_global_kav7_pacific_infernoX.png"),
+} else if(assign=="B"){
+  ggsave(paste0(master_figs, "figures/sovereign_B_assign/maps/birdYEAR_global_kav7_pacific_infernoX.png"),
     width=30, height=20, units="cm", dpi=250)
 }
 

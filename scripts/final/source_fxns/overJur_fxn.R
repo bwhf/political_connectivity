@@ -16,19 +16,30 @@ overJur <- function(inFolder, files=NULL, over_which = c("EEZ", "RFMO"), spatial
   } else {
     files <- files
   }
-  
-  # assign Disputed areas to either UK or Argentina (if assign is set, if not, assumed to RFMO analysis)
-  if(is.null(assign)){spatial <- spatial}
-  else if(assign == "UK"){
-    sovereign <- "United Kingdom"  
-  } else if(assign == "ARG"){
-    sovereign <- "Argentina"  
+
+  if(over_which == "EEZ"){
+    ## Make adjustments to sovereignty information in EEZ data set ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    SOVEREIGN <- spatial@data$SOVEREIGN1
+    
+    multisover <- apply(cbind(spatial@data$SOVEREIGN1, spatial@data$SOVEREIGN2, spatial@data$SOVEREIGN3), 1, 
+      function(x) paste(x[!is.na(x)], collapse = "/"))
+    SOVEREIGN <- ifelse(spatial@data$POL_TYPE == "Joint regime (EEZ)", paste("Joint regime", multisover), SOVEREIGN)
+    SOVEREIGN <- ifelse(spatial@data$POL_TYPE == "Overlapping claim", paste("Disputed", multisover), SOVEREIGN)
+    SOVEREIGN <- ifelse(spatial@data$UNION == "Overlapping claim South China Sea", "Disputed CHN/VNM/PHL/TWN/MAL", SOVEREIGN)
+    SOVEREIGN <- ifelse(spatial@data$UNION == "Chagos Archipelago", "Disputed Mauritius/United Kingdom", SOVEREIGN)
+    SOVEREIGN <- ifelse(SOVEREIGN == "Republic of Mauritius", "Mauritius", SOVEREIGN)
+    # assign Disputed breeding areas to one or other countries claiming sovereignty (if assign is set, if not, assumed to RFMO analysis)
+    if(is.null(assign) | assign == "A"){
+      sovereign <- c("United Kingdom", "Spain")
+    } else if(assign == "B"){
+      sovereign <- c("Argentina", "Morocco")  
+    }
+    
+    SOVEREIGN <- ifelse(spatial@data$UNION=="Falkland Islands" | spatial@data$UNION=="South Georgia & the South Sandwich Islands", sovereign[1], SOVEREIGN)
+    spatial@data$SOVEREIGN <- ifelse(spatial@data$UNION=="Chafarinas Islands" , sovereign[2], SOVEREIGN)
   }
   
-  if(!is.null(assign)){
-    spatial@data$Svrgn_f <- ifelse(spatial@data$Cntry_f=="Falkland Islands" | spatial@data$Cntry_f=="South Georgia & the South Sandwich Islands", sovereign, spatial@data$Svrgn_f)
-  }
-  
+  ## Load tracking data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   wgs84 <- sp::CRS('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs') # WGS for spatializing
   
   words <- do.call("rbind", str_split(files, n=4, "_"))
@@ -42,17 +53,6 @@ overJur <- function(inFolder, files=NULL, over_which = c("EEZ", "RFMO"), spatial
     TD.list <- lapply(spsi_files, function(x) readRDS(paste(inFolder, x, sep="")))
     names(TD.list) <- spsi_files
     
-    TD.list <- lapply(TD.list, function(x) {  # filter out rows with NA in either LAT or LON columns
-      x$latitude <- as.numeric(x$latitude)
-      x$longitude <- as.numeric(x$longitude)
-      NAs2Rmv <- x[-which(is.na(x$latitude) | is.na(x$longitude)), ]
-      if(nrow(NAs2Rmv) > 0){
-      x <- x[-which(is.na(x$latitude) | is.na(x$longitude)), ]
-      return(x)
-      } else { return(x) }
-    }
-      )
-    
     TDsp.list <- lapply(TD.list, function(x) SpatialPointsDataFrame(data=x, SpatialPoints(
       data.frame(x$longitude, x$latitude),
       proj4string = wgs84
@@ -61,20 +61,19 @@ overJur <- function(inFolder, files=NULL, over_which = c("EEZ", "RFMO"), spatial
     
     # overlay points with unioned eez-countries dataset (1 step)
     if(over_which == "EEZ"){
+      
       TD.list <- lapply(TDsp.list, function(x, i) {
         oveez <- over(x, spatial)
         
-        x$eez_name <- as.character(oveez$Cntry_f) #MB# add overlay results (EEZ) to SPntsDF
-        x$jur      <- as.character(oveez$Svrgn_f)
-        
-        x$landlocked <- oveez$landlocked # add whether landlocked to points
-        
+        x$eez_name <- as.character(oveez$UNION) #MB# add overlay results (EEZ) to SPntsDF
+        x$jur      <- as.character(oveez$SOVEREIGN)
+        x$landlocked <- ifelse(as.character(oveez$POL_TYPE)=="Landlocked country", TRUE, FALSE)
+
         x$jur[is.na(x$jur)] <- "High seas" #MB# NAs to 0s (high seas)
-        
         x <- x@data
         
         if(filter_landlocked == TRUE){
-          x <- x %>% dplyr::filter(landlocked == 0 | jur == "High seas") # REMOVE points falling in landlocked countries
+          x <- x %>% dplyr::filter(landlocked == FALSE | jur == "High seas") # REMOVE points falling in landlocked countries
         }
 
         return(x)
@@ -83,12 +82,10 @@ overJur <- function(inFolder, files=NULL, over_which = c("EEZ", "RFMO"), spatial
     } else if (over_which == "RFMO") {
       # see link for dealing with inland points: https://gis.stackexchange.com/questions/225102/calculate-distance-between-points-and-nearest-polygon-in-r
       TD.list <- lapply(TDsp.list, function(x, i) {
+        
         ovrfmo <- sp::over(x, spatial)
-        
         x$jur <- as.character(ovrfmo$RFB) #MB# add overlay results (EEZ) to SPntsDF
-        
         x$jur[is.na(x$jur)] <- "otherRFMO" #MB# NAs to 0s (high seas)
-        
         x <- x@data
         
         return(x)

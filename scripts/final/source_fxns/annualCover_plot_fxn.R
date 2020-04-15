@@ -50,7 +50,7 @@ annualCover_plot <- function(files, inFolder, byYear=FALSE, pheno=NULL, savePlot
       geom_histogram(binwidth = 1) +
       labs(x="",y="Number of tracks") +
       scale_x_continuous(breaks=c(32,91,152,213,274,335), labels=month.abb[c(2,4,6,8,10,12)], expand=c(0,0)) +
-      scale_y_continuous(expand = expand_scale(mult = c(0, .05))) +
+      scale_y_continuous(expand = expansion(mult = c(0, .05))) +
       ggtitle(paste(sp, sname, sep=" - ")) +
       colScale +  # device colors
       theme_bw()

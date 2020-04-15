@@ -2,7 +2,7 @@
 
 pacman::p_load(igraph, ggraph, tidyverse, ggplot2, stringr)
 
-basin_class <- read.csv("data_test/basin_class_df.csv") # ocean basin classification
+basin_class <- read.csv("data/basin_class_df.csv", stringsAsFactors = F)
 
 ## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # thresh <- "high"
@@ -17,14 +17,14 @@ if(thresh == "high"){
 }
 
 ## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-assign <- "UK"
-# assign <- "ARG"
+# assign <- "A"
+assign <- "B"
 
-if(assign == "UK"){
+if(assign == "A"){
   folder <- paste0(master, "glob_count_rfmo/")
   subfolders <- paste0(list.files(folder, full.names = T), "/")
-} else if(assign == "ARG"){
-  folder <- paste0(master, "data/analysis/ARG_assign/glob_count_rfmo/")
+} else if(assign == "B"){
+  folder <- paste0(master, "data/analysis/sovereign_B_assign/glob_count_rfmo/")
   subfolders <- paste0(list.files(folder, full.names = T), "/")
 }
 
@@ -53,7 +53,7 @@ rfmo_df <- do.call("rbind", rfmo_list)
 # globprop_hs  == proportion of species' monthly time spent in High Seas in month 
 # globprop_abs == proportion of species' monthly time spent in RFMO x
 # NEED to get alltimes from 'network_analysis_breed2visit_month.r'
-highseas <- alltimes %>% filter(jurisdiction=="High seas") %>% select(adj_site_name, scientific_name, month, globprop) %>% group_by(adj_site_name, scientific_name, month) %>% summarise(globprop = first(globprop))
+highseas <- alltimes %>% dplyr::filter(jurisdiction=="High seas") %>% dplyr::select(adj_site_name, scientific_name, month, globprop) %>% group_by(adj_site_name, scientific_name, month) %>% summarise(globprop = first(globprop))
 
 rfmo_df <- merge(rfmo_df, highseas, by=c("scientific_name", "adj_site_name", "month")) %>% rename(globprop_rel = globprop.x, globprop_hs = globprop.y) %>% mutate(globprop_abs = globprop_hs * globprop_rel)
 
@@ -61,7 +61,7 @@ rfmo_df <- merge(rfmo_df, highseas, by=c("scientific_name", "adj_site_name", "mo
 # don't need to group_by 'rfmo_run' b/c no RFMO will be visited twice by same individual
 visitsum <- rfmo_df %>% group_by(scientific_name, origin, jurisdiction) %>% summarise( 
   glob_ann_prop = sum(na.omit(globprop_abs)) / 12 
-) %>% filter(!is.na(origin)) %>% filter(jurisdiction != "otherRFMO") #NOTE# need to make sure to earlier ID which "otherRMFO" are NO RFMO
+) %>% dplyr::filter(!is.na(origin)) %>% dplyr::filter(jurisdiction != "otherRFMO") #NOTE# need to make sure to earlier ID which "otherRMFO" are NO RFMO
 
 origins <- unique(visitsum$origin)
 
@@ -78,18 +78,18 @@ edgelist_full <- visitsum %>%
     weight = sum(glob_ann_prop),
     n_spp  = n_distinct(scientific_name)) %>%
   ungroup() %>%
-  filter(!origin == jurisdiction) # remove self links
+  dplyr::filter(!origin == jurisdiction) # remove self links
 ## filter EDGES to top N number of visited countries per origin
 edgelist <- edgelist_full %>% group_by(origin) %>% arrange(desc(weight))
 
 
 ### create an NODELIST ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-from <- rfmo_df %>% filter(jurisdiction %in% edgelist$jurisdiction) %>% 
+from <- rfmo_df %>% dplyr::filter(jurisdiction %in% edgelist$jurisdiction) %>% 
   group_by(origin) %>% summarise(
     breed_rich = n_distinct(scientific_name) 
     ) %>% ungroup() %>% rename(label = origin) 
 
-to <- rfmo_df %>% filter(jurisdiction %in% edgelist$jurisdiction ) %>% 
+to <- rfmo_df %>% dplyr::filter(jurisdiction %in% edgelist$jurisdiction ) %>% 
   group_by(jurisdiction) %>% # TO
   rename(label = jurisdiction) %>% 
   summarise(
@@ -104,15 +104,15 @@ nodelist <- merge(nodelist, basin_class, by.x=c("label"), by.y = c("jurisdiction
     levels = c("none", "Southern Ocean", "Indian Ocean", "shared (Pacific/Indian)", "Pacific Ocean", "shared (Atlantic/Pacific)", "Atlantic Ocean")) ) %>% 
   arrange(ocean_basin) # set up order of nodes by ocean basin levels
 
-nodelist <- nodelist %>% mutate(id = 1:nrow(nodelist)) %>% filter(!is.na(label)) %>% dplyr::select(id, label, breed_rich, visit_rich, breed_node, ocean_basin, landlocked) # add numerical IDs for nodes
+nodelist <- nodelist %>% mutate(id = 1:nrow(nodelist)) %>% dplyr::filter(!is.na(label)) %>% dplyr::select(id, label, breed_rich, visit_rich, breed_node, ocean_basin, landlocked) # add numerical IDs for nodes
 
 
 
 ## make edgelist ids numeric, and labels attributes ##
-breed_nodes <- nodelist %>% filter(breed_node == TRUE) %>% dplyr::select(id, label)
+breed_nodes <- nodelist %>% dplyr::filter(breed_node == TRUE) %>% dplyr::select(id, label)
 x <- merge(edgelist, breed_nodes, by.x=c("origin"), by.y=c("label"))
 
-visit_nodes <- nodelist %>% filter(breed_node == FALSE) %>% dplyr::select(id, label)
+visit_nodes <- nodelist %>% dplyr::filter(breed_node == FALSE) %>% dplyr::select(id, label)
 xx <- merge(edgelist, visit_nodes, by.x=c("jurisdiction"), by.y=c("label"))
 
 edgelist <- merge(x, xx, by=c("origin", "jurisdiction", "weight")) %>% rename(origin_id = id.x, jurisdiction_id = id.y) %>% dplyr::select(origin_id, jurisdiction_id, origin, jurisdiction, weight)
@@ -133,17 +133,17 @@ lay <- data.frame(x = l[, 1], y = l[, 2])
 lay <- cbind(lay, nodelist)
 
 # coordinates for Ocean basins boxes in plot
-IboxO <- lay %>% filter( breed_node == TRUE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Indian"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Indian Ocean"), origin = rep(TRUE))
-IboxN <- lay %>% filter( breed_node == FALSE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Indian"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Indian Ocean"), origin = rep(FALSE))
+IboxO <- lay %>% dplyr::filter( breed_node == TRUE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Indian"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Indian Ocean"), origin = rep(TRUE))
+IboxN <- lay %>% dplyr::filter( breed_node == FALSE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Indian"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Indian Ocean"), origin = rep(FALSE))
 
-PboxO <- lay %>% filter( breed_node == TRUE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Pacific"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Pacific Ocean"), origin = rep(TRUE))
-PboxN <- lay %>% filter( breed_node == FALSE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Pacific"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Pacific Ocean"), origin = rep(FALSE))
+PboxO <- lay %>% dplyr::filter( breed_node == TRUE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Pacific"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Pacific Ocean"), origin = rep(TRUE))
+PboxN <- lay %>% dplyr::filter( breed_node == FALSE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Pacific"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Pacific Ocean"), origin = rep(FALSE))
 
-AboxO <- lay %>% filter( breed_node == TRUE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Atlantic"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Atlantic Ocean"), origin = rep(TRUE))
-AboxN <- lay %>% filter( breed_node == FALSE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Atlantic"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Atlantic Ocean"), origin = rep(FALSE))
+AboxO <- lay %>% dplyr::filter( breed_node == TRUE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Atlantic"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Atlantic Ocean"), origin = rep(TRUE))
+AboxN <- lay %>% dplyr::filter( breed_node == FALSE & (ocean_basin %in% unique(str_subset(lay$ocean_basin, pattern = "Atlantic"))) ) %>% dplyr::select(x, y) %>% mutate(ocean_basin = rep("Atlantic Ocean"), origin = rep(FALSE))
 
 # need y-position of breed nodes
-origin.y <- lay %>% filter(breed_node == TRUE) %>% summarise(y = first(y)) %>% pull(y)
+origin.y <- lay %>% dplyr::filter(breed_node == TRUE) %>% summarise(y = first(y)) %>% pull(y)
 
 boxes <- rbind.data.frame(IboxO, IboxN, PboxO, PboxN, AboxO, AboxN) %>% group_by(ocean_basin, origin) %>% mutate(
   xmin = min(x) - 1,
@@ -173,7 +173,7 @@ p2 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
   geom_rect(data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6) +
   geom_edge_link(aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.9) +
   ## Width scale
-  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, 327)) +
+  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, 335)) +
   geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(
     limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)) +
   scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
@@ -225,11 +225,11 @@ p2 + theme(legend.position = "none")
 # ggsave("figures/test/networks/breed2RFMO_noEDGES.png",
 #   width=40, height=30, units="cm", dpi=250)
 
-if(assign == "UK"){
+if(assign == "A"){
   ggsave(paste0(master_figs, "networks/breed2RFMO_top3_nolegendXX.png"),
     width=40, height=16, units="cm", dpi=250) 
-} else if(assign == "ARG"){
-  ggsave(paste0(master_figs, "figures/ARG_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
+} else if(assign == "B"){
+  ggsave(paste0(master_figs, "figures/sovereign_B_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
     width=40, height=16, units="cm", dpi=250)
 }
 
@@ -272,11 +272,11 @@ p +
 
 
 ## SAVE ##
-if(assign == "UK"){
+if(assign == "A"){
   ggsave(paste0(master_figs, "networks/breed2RFMO_top3_abb_nolegendX.png"),
     width=50, height=20, units="cm", dpi=250)
-} else if(assign == "ARG"){
-  ggsave(paste0(master_figs, "figures/ARG_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
+} else if(assign == "B"){
+  ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
     width=50, height=20, units="cm", dpi=250)
 }
 
@@ -289,10 +289,10 @@ edgelist_full_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = fi
 
 
 ## SAVE ##
-if(assign == "UK"){
+if(assign == "A"){
   write.csv(edges_topn_summ, paste0(master, "summary_tables/network_topconnex_country2RFMO.csv"), row.names = F)
   write.csv(edgelist_full_summ, paste0(master, "summary_tables/network_allconnex_country2RFMO.csv"), row.names = F)
-} else if(assign == "ARG"){
-  write.csv(edges_topn_summ, paste0(master, "ARG_assign/summary_tables/network_topconnex_country2RFMO.csv"), row.names = F)
-  write.csv(edgelist_full_summ, paste0(master, "ARG_assign/summary_tables/network_allconnex_country2RFMO.csv"), row.names = F)
+} else if(assign == "B"){
+  write.csv(edges_topn_summ, paste0(master, "sovereign_B_assign/summary_tables/network_topconnex_country2RFMO.csv"), row.names = F)
+  write.csv(edgelist_full_summ, paste0(master, "sovereign_B_assign/summary_tables/network_allconnex_country2RFMO.csv"), row.names = F)
 }
