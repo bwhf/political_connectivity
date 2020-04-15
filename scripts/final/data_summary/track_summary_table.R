@@ -1,10 +1,10 @@
-# Create table summarizing data per population for each species
+# Create table summarizing tracking data per population for each species #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 pacman::p_load(stringr, dplyr, lubridate)
 
 # folder <- 'data_test/all_TD/'
-# folder <- 'data_test/no_eqnx_downsampled/' # run this for pre-month_filter summary
-# folder <- 'data_test/month_filtered/'        # run this for pre-landlocked
+# folder <- 'data_test/no_eqnx_downsampled/'     # run this for pre-month_filter summary
+# folder <- 'data_test/month_filtered/'          # run this for pre-landlocked
 folder <- 'data/analysis/oveez/'                 # run this for fully-filtered summary
 
 files <- list.files(folder)

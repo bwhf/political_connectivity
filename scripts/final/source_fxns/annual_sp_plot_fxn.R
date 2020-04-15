@@ -120,17 +120,23 @@ annual_sp_plot <- function(inFolder, plotFolder, viewPlot=TRUE) {
     library(cowplot) ## for simple formatting of ggplot
     library(RColorBrewer)
     
-    plotsum$origin <- ifelse(plotsum$origin=="Disputed", "United Kingdom", plotsum$origin) ## THIS will likely fail in some cases
-    
     # Assigning variable political.area names origin status
     # plotsum$is_origin <- ifelse(plotsum$origin==plotsum$political.area, T, F)
     plotsum$is_origin <- ifelse(plotsum$origin==plotsum$jurisdiction, T, F)
     
+    known <- plotsum %>% filter(jurisdiction != "Unknown") %>% ungroup() %>% summarise(sum = sum(na.omit(globprop))/12) %>% pull(sum)
     
-    plotsum <- plotsum %>% group_by(jurisdiction) %>% mutate( insignificant = all(globprop < 0.05) ) %>% ungroup() %>% mutate(
-      jurisdiction = if_else( (is_origin==TRUE) | (jurisdiction == "Unknown"), jurisdiction,
-        if_else(insignificant==TRUE, "Other", jurisdiction)
-      ) )
+    if(known > 0.5) {
+      plotsum <- plotsum %>% group_by(jurisdiction) %>% mutate( insignificant = all(globprop < 0.05) ) %>% ungroup() %>% mutate(
+        jurisdiction = if_else( (is_origin==TRUE) | (jurisdiction == "Unknown"), jurisdiction,
+          if_else(insignificant==TRUE, "Other", jurisdiction)
+        ) )
+    } else {
+      plotsum <- plotsum %>% group_by(jurisdiction) %>% mutate( insignificant = all(globprop < 0.005) ) %>% ungroup() %>% mutate(
+        jurisdiction = if_else( (is_origin==TRUE) | (jurisdiction == "Unknown"), jurisdiction,
+          if_else(insignificant==TRUE, "Other", jurisdiction)
+        ) )
+    }
     
     n_cats <- n_distinct(plotsum$jurisdiction)
     n_cats ## number of distinct political area categories (i.e. total)
@@ -185,7 +191,7 @@ annual_sp_plot <- function(inFolder, plotFolder, viewPlot=TRUE) {
     # allclrs <- c(o.clrs, no.clrs, u.clr, hs.clr)
     
     ## https://stackoverflow.com/questions/27803710/ggplot2-divide-legend-into-two-columns-each-with-its-own-title
-    allclrs <- c(u.clr,"white", hs.clr, o.clrs, "white", N_O_clrs, "white") ## whites added to make spaces between origin/non categories
+    allclrs <- c(u.clr, hs.clr, "white", o.clrs, "white", N_O_clrs, "white") ## whites added to make spaces between origin/non categories
     
     colScale <- scale_fill_manual(name = "Jurisdiction", values = allclrs, drop=F)
     
@@ -198,7 +204,7 @@ annual_sp_plot <- function(inFolder, plotFolder, viewPlot=TRUE) {
     
     # ssizes <- plotsum %>% group_by(month, adj_site_name) %>% summarise(n_tracks = first(na.omit(n_tracks))) %>% group_by(month) %>% summarise(n_tracks = sum(na.omit(n_tracks))) %>% mutate(y_pos = rep(100))  # trying to add sample size labels, doesnt work
     
-    p <- ggplot(plotsum, aes(x=factor(plotsum$month, levels = 1:12), y=globprop * 100, fill=jurisdiction)) +
+    p <- ggplot(plotsum, aes(x=factor(month, levels = 1:12), y=globprop * 100, fill=jurisdiction)) +
       geom_col() +
       scale_x_discrete(breaks=c(1:12), labels=month.abb[1:12], expand=c(0,0)) +
       scale_y_continuous(expand=c(0,0)) +

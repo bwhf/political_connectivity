@@ -22,8 +22,16 @@ outFolder <- "data/analysis/all_TD/"
 
 islgrp_names <- data.table::fread("data/standard_site_names.csv")
 
-report_df <- prep(inFolder=inFolder, standard=islgrp_names, outFolder=outFolder)
+report_df1 <- prep(inFolder=inFolder, standard=islgrp_names, outFolder=outFolder)
 
+report_df2 <- report_df1 %>% group_by(scientific_name, site_name) %>% summarise(
+  perc_pnts_rmvd = first(perc_pnts_rmvd),
+  n_pnts_rmvd = first(n_pnts_rmvd),
+  mn_perc_pnts_rmvd = mean(perc_pnts_rmvd),
+  sum_pnts_rmvd     = sum(as.numeric(n_pnts_rmvd))
+) %>% dplyr::select(scientific_name, site_name, mn_perc_pnts_rmvd, sum_pnts_rmvd)
+
+write.csv(report_df2, "data/analysis/summary_tables/points_rmvd_step1.csv", row.names = F)
 
 # Step 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Hard filter of equinox periods for GLS data (+/- 21/7 days before or after) ####

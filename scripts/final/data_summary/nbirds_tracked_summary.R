@@ -1,4 +1,4 @@
-## summarize number of birds tracked, and combine with summary of tracks (calculated later in analysis) ##
+## summarize number of birds tracked, and combine with summary of tracks (calculated in "track_summary_table.R" script) ##
 
 folder <- "data/analysis/month_filtered/"
 
@@ -55,7 +55,7 @@ n_birds %>% group_by(scientific_name, site_name) %>% summarise(
   )
 
 
-# combine with later-calculated tracking summary table #
+# combine with tracking summary table as calculated in "track_summary_table.R" script #
 track_summary <- read.csv("data/analysis/summary_tables/track_summary_sp_site_device.csv", stringsAsFactors = F)
 
 track_summaryB <- merge(track_summary, n_birds[c(1,2,3, 4)], by=c("scientific_name", "device", "site_name"))
