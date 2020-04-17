@@ -105,7 +105,7 @@ ggsave("figures/test/global_maps/colony_locations_global_kav7_pacific.png",
 
 ## trying to add track lines/points to mapp
 
-inFolder <- 'data_test/oveez/'
+inFolder <- 'data/analysis/oveez/'
 files <- list.files(inFolder)
 files
 
@@ -119,15 +119,39 @@ byGroup <- T
 if(byGroup == T){
   pattern <- paste(c("Thalassarche", "Phoebastria", "Phoebetria", "Diomedea"), collapse = "|")
   
-  allTD$tax_group <- ifelse(str_detect(allTD$scientific_name, pattern = pattern), "Albatross",
-    ifelse(str_detect(allTD$scientific_name, pattern = "Ardenna"), "Ardenna", 
-      ifelse(str_detect(allTD$scientific_name, pattern = "Calonectris"), "Calonectris",
-        ifelse(str_detect(allTD$scientific_name, pattern = "Procellaria"), "Procellaria", 
-          ifelse(str_detect(allTD$scientific_name, pattern = "Macronectes"), "Macronectes", "POOP")
-        )
-      )
+  # group by genus and all albatrosses
+  # allTD$tax_group <- ifelse(str_detect(allTD$scientific_name, pattern = pattern), "Albatross",
+  #   ifelse(str_detect(allTD$scientific_name, pattern = "Ardenna"), "Ardenna", 
+  #     ifelse(str_detect(allTD$scientific_name, pattern = "Calonectris"), "Calonectris",
+  #       ifelse(str_detect(allTD$scientific_name, pattern = "Procellaria"), "Procellaria", 
+  #         ifelse(str_detect(allTD$scientific_name, pattern = "Macronectes"), "Macronectes", "POOP")
+  #       )
+  #     )
+  #   )
+  # )
+  ## group by genus
+  # allTD$tax_group <- ifelse(str_detect(allTD$scientific_name, pattern = pattern), "Thalassarche",
+  #   ifelse(str_detect(allTD$scientific_name, pattern = "Phoebastria"), "Phoebastria", 
+  #     ifelse(str_detect(allTD$scientific_name, pattern = "Phoebetria"), "Phoebetria", 
+  #       ifelse(str_detect(allTD$scientific_name, pattern = "Diomedeidae"), "Diomedeidae", 
+  #         ifelse(str_detect(allTD$scientific_name, pattern = "Ardenna"), "Ardenna", 
+  #           ifelse(str_detect(allTD$scientific_name, pattern = "Calonectris"), "Calonectris",
+  #             ifelse(str_detect(allTD$scientific_name, pattern = "Procellaria"), "Procellaria",
+  #               ifelse(str_detect(allTD$scientific_name, pattern = "Macronectes"), "Macronectes", "POOP")
+  #       )
+  #     )
+  #   )
+  # ) ) ) )
+  ## Just group by albatross and petrel
+  pattern1 <- paste(c("Thalassarche", "Phoebastria", "Phoebetria", "Diomedea"), collapse = "|")
+  pattern2 <- paste(c("Ardenna", "Calonectris", "Macronectes", "Procellaria"), collapse = "|")
+  
+  cols <- c("Albatross" = "#332288", "Petrel" = "#CC6677")
+  
+  allTD$tax_group <- ifelse(str_detect(allTD$scientific_name, pattern = pattern1), "Albatross",
+    ifelse(str_detect(allTD$scientific_name, pattern = pattern2), "Petrel", "POOP")
     )
-  )
+  
   allTD <- allTD %>% dplyr::select("longitude", "latitude", "tax_group", "date_time", "track_id", "scientific_name")
   TD <- allTD
   TD_sf <- st_as_sf(TD, coords = c("longitude", "latitude"), 
@@ -138,7 +162,7 @@ if(byGroup == T){
   re_TD_prj  <- lwgeom::st_transform_proj(re_TD, crs = proj, use_gdal = FALSE)
   
   # color palettes: https://personal.sron.nl/~pault/#sec:qualitative
-  cols <- c("Albatross" = "#332288", "Ardenna" = "#117733", "Calonectris" = "#DDCC77", "Procellaria" = "#EE7733", "Macronectes" = "#AA4499")
+  # cols <- c("Thalassarche" = "#332288", "Diomedeidae" = "#88CCEE", "Phoebastria" = "#44AA99", "Phoebetria" = "#117733", "Ardenna" = "#EE7733", "Calonectris" = "#DDCC77", "Procellaria" = "#CC6677", "Macronectes" = "#AA4499")
   
   p <- ggplot() +
     geom_sf(data = outline_prj, fill = "#56B4E950", size = 0.5/.pt) +
@@ -152,7 +176,7 @@ if(byGroup == T){
     labs(color = "Group") +
     coord_sf(datum = NA) 
   
-  ggsave("figures/test/global_maps/colony_locations_allTD_kav7_atlantic15_groupcolorsX.png",
+  ggsave("figures/maps/colony_locations_allTD_kav7_atlantic15_2groupcolors.png", plot = p, 
     width=30, height=20, units="cm", dpi=250) 
   
 } else {
@@ -181,7 +205,7 @@ if(byGroup == T){
     theme(panel.background = element_rect(fill = "white")) +
     coord_sf(datum = NA) 
   
-  ggsave("figures/test/global_maps/colony_locations_allTD_kav7_atlantic15_onecolor.png",
+  ggsave("figures/maps/colony_locations_allTD_kav7_atlantic15_onecolor.png", plot = p,
     width=30, height=20, units="cm", dpi=250) 
   
 }

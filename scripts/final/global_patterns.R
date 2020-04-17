@@ -18,8 +18,8 @@ if(thresh == "high") {
 
 ## Choose whether to analyze UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-assign <- "A"   #UK and Spain
-# assign <- "B" #Argentina and Morocco
+# assign <- "A"   #UK and Spain
+assign <- "B" #Argentina and Morocco
 
 
 PD <- read.csv('data/population_estimates.csv', stringsAsFactors = F) # population data 
