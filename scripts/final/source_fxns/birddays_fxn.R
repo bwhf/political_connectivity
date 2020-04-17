@@ -8,11 +8,12 @@
 
 # inFolder:  source folder containing filtered and overlain tracking data (.rds)
 # outFolder: output folder in which to save summary tables of time spent  (.rds)
+# over: are tracking points overlaid on EEZs or RFMO areas?
 # lookup:    a lookup table for changing site names (in case certain times of year the 'population' considered changes)
 # by:        "month" or "season" season is phenological period.
 
 
-birddays <- function(inFolder, outFolder, lookup=NULL, by=NULL, files=NULL) {
+birddays <- function(inFolder, outFolder, over = c("EEZ", "RFMO"), lookup=NULL, by=NULL, files=NULL) {
   
   pacman::p_load(tidyverse, scales, data.table, stringr)
   
@@ -62,19 +63,16 @@ birddays <- function(inFolder, outFolder, lookup=NULL, by=NULL, files=NULL) {
       site_name = first(site_name),
       dsi       = n_distinct(yday)  # number of tracking days per season for each track/individual
     )
-    # calculate simple weights from the proportion of the day spent in each jurisdiction, based on number of jurs per day
-    weights <- TD %>% group_by(breed_status, track_id, yday) %>% summarise(
-      n_jur     = n_distinct(jur), # number of jurisdictions visited by each individual on each day tracked 
-      pp_jur    = 1/n_jur          # basic proportion of time spent by a bird in each jur
-    )
-    
-    TD_weights <- merge(TD, weights) # merge weights to Tracking Data
-    
-    # calculate daily weights (prop. of day spent) for each jur-yday combo
-    weighted <- TD_weights %>% group_by(breed_status, adj_site_name, track_id, yday, jur) %>% summarise(
-      day_wei = first(pp_jur))
-    
-    weighted <- merge(weighted, TD_ndays) # combine jur, daily weights, and dmi (monthly) weight
+      # calculate simple weights from the proportion of the day spent in each jurisdiction, based on number of jurs per day
+      weights <- TD %>% group_by(breed_status, track_id, yday) %>% summarise(
+        n_jur     = n_distinct(jur), # number of jurisdictions visited by each individual on each day tracked 
+        pp_jur    = 1/n_jur          # basic proportion of time spent by a bird in each jur
+      )
+      # calculate daily weights (prop. of day spent) for each jur-yday combo
+      weighted <- TD_weights %>% group_by(breed_status, adj_site_name, track_id, yday, jur) %>% summarise(
+        day_wei = first(pp_jur))
+      
+      weighted <- merge(weighted, TD_ndays) # combine jur, daily weights, and dmi (monthly) weight
     
     # Make bird-days dataset
     brdy <- weighted %>% group_by(breed_status, jur, track_id, adj_site_name) %>% summarise(
@@ -118,12 +116,16 @@ birddays <- function(inFolder, outFolder, lookup=NULL, by=NULL, files=NULL) {
       month_wei = dmi / month_dur,   # weight of track based on n of tracked days in a month
       dmi2      = n_distinct(yday) * month_wei   # dmi2 = day-month-individual -> number of days of tracking data per month per track adjusted for the proportion of days in a month covered by the track
     )
+    
+    if(over == "RFMO"){
+      TD <- TD %>% mutate( jur = ifelse(jur == "otherRFMO" | sovereign == "EEZ", "EEZ", jur) )
+    }
+    
     # calculate simple weights from the proportion of the day spent in each jur, based on number of jurisdictions per day
     weights <- TD %>% group_by(month, track_id, yday) %>% summarise(
       n_jur     = n_distinct(jur), # number of jurs visited by each individual on each day tracked 
       pp_jur    = 1/n_jur          # basic proportion of time spent by a bird in each jur
     )
-    
     TD_weights <- merge(TD, weights) # merge weights to Tracking Data
     
     # calculate daily weights (prop. of day spent) for each jur-yday combo
@@ -131,7 +133,7 @@ birddays <- function(inFolder, outFolder, lookup=NULL, by=NULL, files=NULL) {
       day_wei = first(pp_jur))
     
     weighted <- merge(weighted, TD_ndays) # combine jur, daily weights, and dmi (monthly) weight
-    
+
     # Make bird-days dataset
     brdy <- weighted %>% group_by(month, adj_site_name, jur, track_id) %>% summarise(
       scientific_name  = first(scientific_name),
@@ -149,6 +151,7 @@ birddays <- function(inFolder, outFolder, lookup=NULL, by=NULL, files=NULL) {
     ## n tracks per month
     nTracks <- brdy %>% group_by(month, adj_site_name) %>% summarise(n_tracks = n_distinct(track_id))
     # print(nTracks)
+    # nTracks <- TD %>% group_by(month, adj_site_name) %>% summarise(n_tracks = first(n_tracks_month))
     
     brdy <- merge(brdy, nTracks)
     
@@ -158,6 +161,10 @@ birddays <- function(inFolder, outFolder, lookup=NULL, by=NULL, files=NULL) {
       ppts2 = ppt2 * ( 1 / n_tracks),
       ppts3 = ppt3 * ( 1 / n_tracks)
     )
+    
+    if(over == "RFMO"){
+      brdy <- brdy %>% filter(jur != "EEZ" & jur != "otherRFMO") # remove calculations for other areas besides focal RFMO
+    }
 
     ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ## Save
@@ -166,7 +173,6 @@ birddays <- function(inFolder, outFolder, lookup=NULL, by=NULL, files=NULL) {
     
     saveRDS(brdy, paste(outFolder, brdyfname, sep="") )
     }
-    
     
   }
   

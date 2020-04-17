@@ -90,10 +90,10 @@ birddays(inFolder = folder, by = "month", outFolder = out)
 
 # RFMO analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # make output folders for each RFMO (need a vector of RFMO names ['rfmos'])
-for(i in 1:length(rfmos)){
-  one <- rfmos[[i]]
-  dir.create(paste0(master, "birddays_rfmo/", one))
-}
+# for(i in 1:length(rfmos)){
+#   one <- rfmos[[i]]
+#   dir.create(paste0(master, "birddays_rfmo/", one))
+# }
 
 main_in <- paste0(master, "ovrfmo/")
 ins <- paste0(list.files(main_in, full.names = T, recursive = F), "/")

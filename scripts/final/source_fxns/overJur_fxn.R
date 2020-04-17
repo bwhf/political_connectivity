@@ -71,6 +71,7 @@ overJur <- function(inFolder, files=NULL, over_which = c("EEZ", "RFMO"), spatial
 
         x$jur[is.na(x$jur)] <- "High seas" #MB# NAs to 0s (high seas)
         x <- x@data
+        x <- x %>% group_by(month) %>% summarise(n_tracks_month = n_distinct(track_id)) %>% left_join(x, by="month") # monthly sample size
         
         if(filter_landlocked == TRUE){
           x <- x %>% dplyr::filter(landlocked == FALSE | jur == "High seas") # REMOVE points falling in landlocked countries
@@ -81,8 +82,9 @@ overJur <- function(inFolder, files=NULL, over_which = c("EEZ", "RFMO"), spatial
       )
     } else if (over_which == "RFMO") {
       # see link for dealing with inland points: https://gis.stackexchange.com/questions/225102/calculate-distance-between-points-and-nearest-polygon-in-r
+      
       TD.list <- lapply(TDsp.list, function(x, i) {
-        
+        x$sovereign <- if_else(x$jur=="High seas", "High seas", "EEZ")  # identifier column of whether point is in high seas or EEZ
         ovrfmo <- sp::over(x, spatial)
         x$jur <- as.character(ovrfmo$RFB) #MB# add overlay results (EEZ) to SPntsDF
         x$jur[is.na(x$jur)] <- "otherRFMO" #MB# NAs to 0s (high seas)

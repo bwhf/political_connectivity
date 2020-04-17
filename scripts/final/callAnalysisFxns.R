@@ -146,23 +146,24 @@ rfmos <- do.call("rbind", str_split(tools::list_files_with_exts(shp_folder, "shp
 #   dir.create(paste0("data/analysis/ovrfmo/", one))
 # }
 
-# filter to High seas points only # ~~~~~~~~~~~~~~~~~~~
-ins <- "data/analysis/oveez/"   
-out <- "data/analysis/oveez_hs/"
+# # filter to High seas points only # ~~~~~~~~~~~~~~~~~~~
+# ins <- "data/analysis/oveez/"   
+# out <- "data/analysis/oveez_hs/"
+# 
+# files <- list.files(ins, full.names = T)
+# filename <- list.files(ins, full.names = F)
+# 
+# for(i in 1:length(files)){
+#   print(i)
+#   one <- readRDS(files[i])
+#   one.f <- dplyr::filter(one, jur == "High seas")
+#   # print(paste(nrow(one), "-->", nrow(one.f), "pnts"))
+#   saveRDS(one.f, paste0(out, filename[i]))
+# }
 
-files <- list.files(ins, full.names = T)
-filename <- list.files(ins, full.names = F)
-
-for(i in 1:length(files)){
-  print(i)
-  one <- readRDS(files[i])
-  one.f <- dplyr::filter(one, jur == "High seas")
-  # print(paste(nrow(one), "-->", nrow(one.f), "pnts"))
-  saveRDS(one.f, paste0(out, filename[i]))
-}
-
-# now filter to only High seas points for RFMO analysis ~~~~~~
-ins <- "data/analysis/oveez_hs/"
+# now overlay HS points with RFMO areas ~~~~~~
+# ins <- "data/analysis/oveez_hs/"
+ins <- "data/analysis/oveez/"
 main <- "data/analysis/ovrfmo/"
 outs <- paste0(list.files(main, full.names = T, recursive = F), "/") # need to have one folder for each RFMO
 
@@ -194,10 +195,10 @@ birddays(inFolder = folder, by = "month", outFolder = out)
 
 # RFMO analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # make output folders for each RFMO (need a vector of RFMO names ['rfmos'])
-for(i in 1:length(rfmos)){
-  one <- rfmos[[i]]
-  dir.create(paste0("data/analysis/birddays_rfmo/", one))
-}
+# for(i in 1:length(rfmos)){
+#   one <- rfmos[[i]]
+#   dir.create(paste0("data/analysis/birddays_rfmo/", one))
+# }
 
 main_in <- "data/analysis/ovrfmo/"
 ins <- paste0(list.files(main_in, full.names = T, recursive = F), "/")
@@ -207,7 +208,7 @@ outs <- paste0(list.files(main_out, full.names = T, recursive = F), "/") # need 
 
 for(i in 1:length(ins)){ # loop through each RFMO
   print(i)
-  birddays(inFolder = ins[i], by = "month", outFolder = outs[i])
+  birddays(inFolder = ins[i], by = "month", over = "RFMO", outFolder = outs[i])
 }
 
 
