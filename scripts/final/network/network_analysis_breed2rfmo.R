@@ -17,14 +17,14 @@ if(thresh == "high"){
 }
 
 ## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# assign <- "A"
-assign <- "B"
+assign <- "A"
+# assign <- "B"
 
 if(assign == "A"){
   folder <- paste0(master, "glob_count_rfmo/")
   subfolders <- paste0(list.files(folder, full.names = T), "/")
 } else if(assign == "B"){
-  folder <- paste0(master, "data/analysis/sovereign_B_assign/glob_count_rfmo/")
+  folder <- paste0(master, "sovereign_B_assign/glob_count_rfmo/")
   subfolders <- paste0(list.files(folder, full.names = T), "/")
 }
 
@@ -53,14 +53,15 @@ rfmo_df <- do.call("rbind", rfmo_list)
 # globprop_hs  == proportion of species' monthly time spent in High Seas in month 
 # globprop_abs == proportion of species' monthly time spent in RFMO x
 # NEED to get alltimes from 'network_analysis_breed2visit_month.r'
-highseas <- alltimes %>% dplyr::filter(jurisdiction=="High seas") %>% dplyr::select(adj_site_name, scientific_name, month, globprop) %>% group_by(adj_site_name, scientific_name, month) %>% summarise(globprop = first(globprop))
+# highseas <- alltimes %>% dplyr::filter(jurisdiction=="High seas") %>% group_by(scientific_name, adj_site_name, month, origin, jurisdiction) %>% summarise(  globprop = first(globprop) ) %>% group_by(scientific_name, origin, jurisdiction) %>%  summarise(
+#   globprop_hs = sum(na.omit(globprop)) / 12 ) %>% dplyr::select(-jurisdiction)
 
-rfmo_df <- merge(rfmo_df, highseas, by=c("scientific_name", "adj_site_name", "month")) %>% rename(globprop_rel = globprop.x, globprop_hs = globprop.y) %>% mutate(globprop_abs = globprop_hs * globprop_rel)
+# rfmo_df <- merge(rfmo_df, highseas, by=c("scientific_name", "origin")) %>% rename(globprop_rel = globprop) %>% mutate(globprop_abs = globprop_hs * globprop_rel)
 
 ######## NETWORK!! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # don't need to group_by 'rfmo_run' b/c no RFMO will be visited twice by same individual
 visitsum <- rfmo_df %>% group_by(scientific_name, origin, jurisdiction) %>% summarise( 
-  glob_ann_prop = sum(na.omit(globprop_abs)) / 12 
+  glob_ann_prop = sum(na.omit(globprop)) / 12 
 ) %>% dplyr::filter(!is.na(origin)) %>% dplyr::filter(jurisdiction != "otherRFMO") #NOTE# need to make sure to earlier ID which "otherRMFO" are NO RFMO
 
 origins <- unique(visitsum$origin)
@@ -173,7 +174,7 @@ p2 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
   geom_rect(data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6) +
   geom_edge_link(aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.9) +
   ## Width scale
-  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, 335)) +
+  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, maxweight_eez)) + # maxweight_eez comes from EEZ network script (ensures same scale)
   geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(
     limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)) +
   scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
@@ -283,9 +284,9 @@ if(assign == "A"){
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Save data frame of top or all connections ## 
 
-edges_topn_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = first(breed_rich)) %>% right_join(edges_topn, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
+edges_topn_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = max(na.omit(breed_rich))) %>% right_join(edges_topn, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
 
-edgelist_full_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = first(breed_rich)) %>% right_join(edgelist_full, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
+edgelist_full_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = max(na.omit(breed_rich)))  %>% right_join(edgelist_full, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
 
 
 ## SAVE ##

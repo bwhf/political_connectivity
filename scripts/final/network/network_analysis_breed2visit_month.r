@@ -6,8 +6,8 @@ basin_class <- read.csv("data/basin_class_df.csv", stringsAsFactors = F)
 
 
 ## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
-thresh <- "high"
-# thresh  <- "low"
+# thresh <- "high"
+thresh  <- "low"
 
 if(thresh == "high"){
   master <- "data/analysis/bird_thresh/"
@@ -18,8 +18,8 @@ if(thresh == "high"){
 }
 
 ## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-assign <- "A"
-# assign <- "B"
+# assign <- "A"
+assign <- "B"
 
 if(assign == "A"){
   folder <- paste0(master, "glob_count/")
@@ -154,7 +154,7 @@ boxes <- rbind.data.frame(IboxO, IboxN, PboxO, PboxN, AboxO, AboxN) %>% group_by
 # PLOT # 
 ## to plot only top N connections (top 1, 2, etc) for illustrative purposes
 edges_topn <- edgelist_full %>% group_by(origin) %>% arrange(desc(weight)) %>% top_n(5, weight)
-maxweight <- ceiling(max(na.omit(edges_topn$weight)) * 100) # 335
+maxweight_eez <- ceiling(max(na.omit(edges_topn$weight)) * 100) # 335
 
 routes_igraph2 <- delete.edges(routes_igraph, which(!E(routes_igraph)$weight %in% edges_topn$weight))
 
@@ -171,7 +171,7 @@ p1 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
   geom_rect(data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6) +
   geom_edge_link(aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.9) +
   ## Width scale
-  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, maxweight)) +
+  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, maxweight_eez)) +
   geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(
     limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)) +
   scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
@@ -296,9 +296,9 @@ if(assign == "A"){
 
 # edgelist_full %>% right_join(nodelist, by=c("origin" = "label"))
 
-edges_topn_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = first(breed_rich)) %>% right_join(edges_topn, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
+edges_topn_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = max(na.omit(breed_rich))) %>% right_join(edges_topn, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
 
-edgelist_full_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = first(breed_rich)) %>% right_join(edgelist_full, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
+edgelist_full_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = max(na.omit(breed_rich))) %>% right_join(edgelist_full, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
 
 if(assign == "A"){
   write.csv(edges_topn_summ, paste0(master, "summary_tables/network_topconnex_country2country.csv"), row.names = F)
