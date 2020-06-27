@@ -1,6 +1,6 @@
 ---
 title: "Political responsibility for albatrosses and large petrels"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
