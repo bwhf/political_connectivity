@@ -1,6 +1,6 @@
 #### Create network connecting origin country communities to high seas RFMOs ####
 
-pacman::p_load(igraph, ggraph, tidyverse, ggplot2, stringr)
+pacman::p_load(igraph, ggraph, tidyverse, ggplot2, stringr, ggtext)
 
 basin_class <- read.csv("data/basin_class_df.csv", stringsAsFactors = F)
 
@@ -153,7 +153,7 @@ boxes <- rbind.data.frame(IboxO, IboxN, PboxO, PboxN, AboxO, AboxN) %>% group_by
   ymax = ifelse(origin == TRUE, max(y) + .8, max(y) + 1)
 ) %>% summarise(
   xmin = first(xmin), xmax = first(xmax), ymin = first(ymin), ymax = first(ymax)
-)
+) %>% ungroup() %>% mutate(ocean_basin = factor(ocean_basin, levels = c("Indian Ocean", "Pacific Ocean", "Atlantic Ocean")))
 
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 # PLOT # 
@@ -170,22 +170,37 @@ lay$nodesize <- ifelse(is.na(lay$breed_rich), lay$visit_rich, lay$breed_rich)
 
 lay$origin_label <- ifelse(lay$breed_node == T, "Breeding", "Visiting")
 
-p2 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
-  geom_rect(data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6) +
-  geom_edge_link(aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.9) +
+p2 <-  ggraph(plot_igraph, layout = lay[, c("x", "y")]) +
+  geom_rect(
+    data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6
+  ) +
+  scale_fill_discrete( guide = guide_legend(title="Ocean basin", order = 2) ) +
+  geom_edge_link(
+    aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.8
+  ) +
   ## Width scale
-  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, maxweight_eez)) + # maxweight_eez comes from EEZ network script (ensures same scale)
-  geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(
-    limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)) +
-  scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
+  scale_edge_width(
+    breaks = c(25, 50, 100, 200, 300), limits = c(0, maxweight_eez), range=c(1,8)
+  ) + # maxweight_eez comes from EEZ network script (ensures same scale)
+  ggnewscale::new_scale_fill() + # allows for adding another scale_fill call
+  geom_node_point(
+    data = lay, aes(x=x, y=y, size = nodesize, fill=origin_label), pch=21
+  ) + 
+  scale_size(
+    limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)
+  ) +
+  scale_fill_manual(
+    values = c("Breeding" = viridis::viridis(n=1, begin = 1, end = 1), "Visiting" = viridis::viridis(n=1, begin = .15, end = .15)), guide = guide_legend(title="Area type", order = 4, override.aes = list(size=5))
+  )  +
+  # scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
   ggforce::theme_no_axes() + theme(panel.border = element_blank()) + coord_cartesian(ylim=c(min(lay$y)-2, max(lay$y)+1 )) +
   # legends 
   guides(
     edge_width = guide_legend(title="Strength", order = 4),
-    size       = guide_legend(title="Species richness", order = 3),
-    fill       = guide_legend(title="Ocean basin", order = 2),
-    color      = guide_legend(title="Jurisdiction", order = 1, override.aes = list(size=4))
-  )
+    size       = guide_legend(title="Species richness", order = 3, override.aes = list(fill="black"))
+  ) + theme(legend.position = "none") 
+  
+
 # p2
 
 # full country names
@@ -194,7 +209,7 @@ p2 <- p2 + coord_cartesian(ylim=c(min(lay$y)-2.5, max(lay$y) + 4.5 )) +
     data=subset(lay, breed_node==FALSE),
     aes(x=x, y=y, label = label),
     size=4.75,
-    nudge_y = -1,
+    nudge_y = -1.1,
     hjust = 0,
     angle = -45, size = 6
   ) +
@@ -226,38 +241,38 @@ p2 + theme(legend.position = "none")
 # ggsave("figures/test/networks/breed2RFMO_noEDGES.png",
 #   width=40, height=30, units="cm", dpi=250)
 
-if(assign == "A"){
-  ggsave(paste0(master_figs, "networks/breed2RFMO_top3_nolegendXX.png"),
-    width=40, height=16, units="cm", dpi=250) 
-} else if(assign == "B"){
-  ggsave(paste0(master_figs, "figures/sovereign_B_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
-    width=40, height=16, units="cm", dpi=250)
-}
+# if(assign == "A"){
+#   ggsave(paste0(master_figs, "networks/breed2RFMO_top3_nolegendXX.png"),
+#     width=40, height=16, units="cm", dpi=250) 
+# } else if(assign == "B"){
+#   ggsave(paste0(master_figs, "figures/sovereign_B_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
+#     width=40, height=16, units="cm", dpi=250)
+# }
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## abbreviate country names ##
 lay$label <- basin_class$abb[match(lay$label, basin_class$jurisdiction)]
-
-p +
-  geom_text(
-    data=subset(lay, breed_node==FALSE),
-    aes(x=x, y=y, label = label),
-    size=6.5,
-    nudge_y = -1.2, 
-    hjust = 0.5,
-    angle = 0
-  ) +
-  geom_label(
-    data=subset(lay, breed_node==TRUE),
-    aes(x=x, y=y, label = label),
-    nudge_y = + 1.1,
-    hjust = 0.5,
-    size = 8.5,
-    alpha = 0.7, label.size = 0, label.r=unit(0.5, "lines") # label boxes
-  ) +
-  theme(legend.position = "none")
-
+# 
+# p +
+#   geom_text(
+#     data=subset(lay, breed_node==FALSE),
+#     aes(x=x, y=y, label = label),
+#     size=6.5,
+#     nudge_y = -1.2, 
+#     hjust = 0.5,
+#     angle = 0
+#   ) +
+#   geom_label(
+#     data=subset(lay, breed_node==TRUE),
+#     aes(x=x, y=y, label = label),
+#     nudge_y = + 1.1,
+#     hjust = 0.5,
+#     size = 8.5,
+#     alpha = 0.7, label.size = 0, label.r=unit(0.5, "lines") # label boxes
+#   ) +
+#   theme(legend.position = "none")
+# 
 
 
 ##Save##
@@ -273,13 +288,13 @@ p +
 
 
 ## SAVE ##
-if(assign == "A"){
-  ggsave(paste0(master_figs, "networks/breed2RFMO_top3_abb_nolegendX.png"),
-    width=50, height=20, units="cm", dpi=250)
-} else if(assign == "B"){
-  ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
-    width=50, height=20, units="cm", dpi=250)
-}
+# if(assign == "A"){
+#   ggsave(paste0(master_figs, "networks/breed2RFMO_top3_abb_nolegendX.png"),
+#     width=50, height=20, units="cm", dpi=250)
+# } else if(assign == "B"){
+#   ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2RFMO_top3_abb_nolegendX.png"),
+#     width=50, height=20, units="cm", dpi=250)
+# }
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Save data frame of top or all connections ## 

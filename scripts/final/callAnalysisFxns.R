@@ -17,9 +17,10 @@ pacman::p_load(dplyr, sp, raster, stringr, ggplot2)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 source("scripts/final/source_fxns/prep_fxn.R")
 
-inFolder <- "data/all_TD/"
-outFolder <- "data/analysis/all_TD/"
+inFolder <- "data/all_TD/"           # input folder with tracking data
+outFolder <- "data/analysis/all_TD/" # where to save prepped output data
 
+# table of alternate population names, used to standardize file names etc.
 islgrp_names <- data.table::fread("data/standard_site_names.csv")
 
 report_df1 <- prep(inFolder=inFolder, standard=islgrp_names, outFolder=outFolder)
@@ -96,7 +97,7 @@ folder <- "data/analysis/month_filtered/"
 files <- list.files(folder)
 
 ## run for one species
-# species <- "Calonectris diomedea"
+# species <- "Thalassarche melanophris"
 # files <- files[str_detect(files, species)]
 
 # repo <- "figures/test/annual_coverage_spp.site/" 
@@ -109,7 +110,7 @@ annualCover_plot(files=files, inFolder = folder, byYear = F, savePlot = T, saveF
 ## ANALYSIS STEPS ## ---------------------------------------------------------
 
 # Step 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## Overlay each data set on an EEZ polygon layer ####
+## Overlay each data set on an spatial layer of political areas ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 source("scripts/final/source_fxns/overJur_fxn.R")
 
@@ -127,7 +128,8 @@ files <- list.files(folder)
 out <- "data/analysis/oveez/"
 # out <- "data_test/oveez/"
 
-## Unioned land and EEZ dataset ## (http://www.marineregions.org/downloads.php)
+## Unioned land and EEZ dataset ## 
+# download this EEZ-Land dataset here: http://www.vliz.be/en/imis?dasid=6406&doiid=403
 eez_cnt <- raster::shapefile("spatial_data/shapefiles_EEZ_countries/union_countries_EEZs/EEZ_Land_v3_202030.shp", use_iconv = TRUE, encoding = "UTF-8")
 
 overJur(inFolder = folder, files=NULL, over_which = "EEZ", spatial = eez_cnt, filter_landlocked=TRUE, assign="A", outFolder = out)
@@ -135,7 +137,7 @@ overJur(inFolder = folder, files=NULL, over_which = "EEZ", spatial = eez_cnt, fi
 
 # RFMO analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # NOTE: must first run EEZ analysis for this to work
-
+# Because RFMOs can overlap, must run each one individidually
 # individual RFMO shapefiles (http://www.fao.org/geonetwork/srv/en/main.home?uuid=cc7dbf20-1b8b-11dd-8bbb-0017f293bd28)
 shp_folder <- "spatial_data/RFMOs_ofinterest" # folder containing individual RFMO polygon shapefiles
 rfmos <- do.call("rbind", str_split(tools::list_files_with_exts(shp_folder, "shp", full.names = F), pattern = fixed(".")))[,1]
@@ -146,28 +148,12 @@ rfmos <- do.call("rbind", str_split(tools::list_files_with_exts(shp_folder, "shp
 #   dir.create(paste0("data/analysis/ovrfmo/", one))
 # }
 
-# # filter to High seas points only # ~~~~~~~~~~~~~~~~~~~
-# ins <- "data/analysis/oveez/"   
-# out <- "data/analysis/oveez_hs/"
-# 
-# files <- list.files(ins, full.names = T)
-# filename <- list.files(ins, full.names = F)
-# 
-# for(i in 1:length(files)){
-#   print(i)
-#   one <- readRDS(files[i])
-#   one.f <- dplyr::filter(one, jur == "High seas")
-#   # print(paste(nrow(one), "-->", nrow(one.f), "pnts"))
-#   saveRDS(one.f, paste0(out, filename[i]))
-# }
-
-# now overlay HS points with RFMO areas ~~~~~~
+# now overlay high seas points with RFMO areas ~~~~~~
 # ins <- "data/analysis/oveez_hs/"
 ins <- "data/analysis/oveez/"
 main <- "data/analysis/ovrfmo/"
 outs <- paste0(list.files(main, full.names = T, recursive = F), "/") # need to have one folder for each RFMO
 
-# individual RFMO shapefiles (http://www.fao.org/geonetwork/srv/en/main.home?uuid=cc7dbf20-1b8b-11dd-8bbb-0017f293bd28)
 shpfiles.list <- tools::list_files_with_exts(shp_folder, "shp")
 
 for(i in 1:length(shpfiles.list)){ # loop through each RFMO
@@ -178,7 +164,7 @@ for(i in 1:length(shpfiles.list)){ # loop through each RFMO
 
 
 # Step 6 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## Calculate bird-days  ####
+     #### Calculate monthly bird days spent in each political area  ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 source("scripts/final/source_fxns/birddays_fxn.R")
 # source("scripts/exploration/source_fxns/WIP_birddays_fxn.R")
@@ -190,7 +176,7 @@ out    <- "data/analysis/birddays_eez/"
 # out    <- "data_test/birddays_eez/"
 
 
-birddays(inFolder = folder, by = "month", outFolder = out)
+birddays(inFolder = folder, by = "month", over = "EEZ", outFolder = out)
 
 
 # RFMO analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

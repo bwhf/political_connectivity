@@ -1,12 +1,14 @@
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-## Script to re-run analysis, assigning disputed breeding areas to their second claimaint (Argentina and Morocco) ## 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+### Script to call the functions for each step of the Pol. Con/Res. project ### 
+# sovereign re-assignment
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#-----------------------------------------------------------------------------#
+
+## - Assign disputed breeding areas to their second claimant (Argentina and Morocco) - ##
+
+pacman::p_load(dplyr, sp, raster, stringr, ggplot2)
 #----------------------------------------------------------------------------#
-
-assign <- "B"
-
-master <- "data/analysis/sovereign_B_assign/"
-
+a
 ## ANALYSIS STEPS ## ---------------------------------------------------------
 
 # Step 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,28 +41,13 @@ shp_folder <- "spatial_data/RFMOs_ofinterest" # folder containing individual RFM
 rfmos <- do.call("rbind", str_split(tools::list_files_with_exts(shp_folder, "shp", full.names = F), pattern = fixed(".")))[,1]
 
 # make output folders for each RFMO (need a vector of RFMO names ['rfmos'])
-for(i in 1:length(rfmos)){
-  one <- rfmos[[i]]
-  dir.create(paste0(master, "ovrfmo/", one))
-}
-
-# filter to High seas points only # ~~~~~~~~~~~~~~~~~~~
-ins <- paste0(master, "oveez/")  
-out <- paste0(master, "oveez_hs/")
-
-files <- list.files(ins, full.names = T)
-filename <- list.files(ins, full.names = F)
-
-for(i in 1:length(files)){
-  print(i)
-  one <- readRDS(files[i])
-  one.f <- dplyr::filter(one, jur == "High seas")
-  # print(paste(nrow(one), "-->", nrow(one.f), "pnts"))
-  saveRDS(one.f, paste(out, filename[i]))
-}
+# for(i in 1:length(rfmos)){
+#   one <- rfmos[[i]]
+#   dir.create(paste0(master, "ovrfmo/", one))
+# }
 
 # now use High seas points only for RFMO analysis ~~~~~~
-ins <- paste0(master, "oveez_hs/")
+ins <- paste0(master, "oveez/")  
 main <- paste0(master, "ovrfmo/")
 outs <- paste0(list.files(main, full.names = T, recursive = F), "/") # need to have one folder for each RFMO
 
@@ -78,14 +65,13 @@ for(i in 1:length(shpfiles.list)){ # loop through each RFMO
 ## Calculate bird-days  ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 source("scripts/final/source_fxns/birddays_fxn.R")
-# source("scripts/exploration/source_fxns/WIP_birddays_fxn.R")
 
 # EEZ analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 folder <- paste0(master, "oveez/")
 out    <- paste0(master, "birddays_eez/")
 
 
-birddays(inFolder = folder, by = "month", outFolder = out)
+birddays(inFolder = folder, by = "month", over = "EEZ", outFolder = out)
 
 
 # RFMO analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,7 +89,7 @@ outs <- paste0(list.files(main_out, full.names = T, recursive = F), "/") # need 
 
 for(i in 1:length(ins)){ # loop through each RFMO
   print(i)
-  birddays(inFolder = ins[i], by = "month", outFolder = outs[i])
+  birddays(inFolder = ins[i], by = "month", over = "RFMO", outFolder = outs[i])
 }
 
 

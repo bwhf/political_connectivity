@@ -1,11 +1,12 @@
 ## Network plot of time spent in visited (non-origin countries - highlighting important relationships between origin and non-origin jurisdictios ###) ####
 
+# remotes::install_github("wilkelab/ggtext") # not on CRAN yet
 pacman::p_load(igraph, ggplot2, tidyverse, ggraph, dplyr, stringr, ggtext)
 
 basin_class <- read.csv("data/basin_class_df.csv", stringsAsFactors = F)
 
 
-## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
+## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##d##
 # thresh <- "high"
 thresh  <- "low"
 
@@ -18,8 +19,8 @@ if(thresh == "high"){
 }
 
 ## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# assign <- "A"
-assign <- "B"
+assign <- "A"
+# assign <- "B"
 
 if(assign == "A"){
   folder <- paste0(master, "glob_count/")
@@ -148,7 +149,7 @@ boxes <- rbind.data.frame(IboxO, IboxN, PboxO, PboxN, AboxO, AboxN) %>% group_by
   ymax = ifelse(origin == TRUE, max(y) + 1.2, max(y) + 2.4)
 ) %>% summarise(
   xmin = first(xmin), xmax = first(xmax), ymin = first(ymin), ymax = first(ymax)
-)
+) %>% ungroup() %>% mutate(ocean_basin = factor(ocean_basin, levels = c("Indian Ocean", "Pacific Ocean", "Atlantic Ocean")))
 
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 # PLOT # 
@@ -166,22 +167,35 @@ lay$nodesize <- ifelse(is.na(lay$breed_rich), lay$visit_rich, lay$breed_rich)
 
 lay$origin_label <- ifelse(lay$breed_node == T, "Breeding", "Visiting")
 
-
-p1 <- ggraph(plot_igraph, layout = "manual", node.positions = lay) +
-  geom_rect(data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6) +
-  geom_edge_link(aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.9) +
+p1 <- ggraph(plot_igraph, layout = lay[, c("x", "y")]) +
+  geom_rect(
+    data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6
+    ) +
+  scale_fill_discrete( guide = guide_legend(title="Ocean basin", order = 2) ) +
+  
+  geom_edge_link(
+    aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.8
+    ) +
   ## Width scale
-  scale_edge_width(breaks = c(50, 100, 200, 300), limits = c(0, maxweight_eez)) +
-  geom_node_point(data = lay, aes(x=x, y=y, size = nodesize, color=origin_label)) + scale_size(
-    limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)) +
-  scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
+  scale_edge_width(
+    breaks = c(25, 50, 100, 200, 300), limits = c(0, maxweight_eez), range=c(1,8)
+    ) +
+  ggnewscale::new_scale_fill() + # allows for adding another scale_fill call
+  geom_node_point(
+    data = lay, aes(x=x, y=y, size = nodesize, fill=origin_label), pch=21
+    ) + 
+  scale_size(
+    limits = c(0,39), breaks = c(1,5,10,30), range=c(2,20)
+  ) +
+  # scale_color_manual(values = c("Breeding" = "gold", "Visiting" = "darkorchid"))  +
+  scale_fill_manual(
+    values = c("Breeding" = viridis::viridis(n=1, begin = 1, end = 1), "Visiting" = viridis::viridis(n=1, begin = .15, end = .15)), guide = guide_legend(title="Area type", order = 4, override.aes = list(size=5))
+    )  +
   ggforce::theme_no_axes() + theme(panel.border = element_blank()) +
   # legends 
   guides(
     edge_width = guide_legend(title="Strength", order = 1),
-    size  = guide_legend(title="Species richness", order = 2),
-    fill = guide_legend(title="Ocean basin", order = 3),
-    color = guide_legend(title="Jurisdiction", order = 4, override.aes = list(size=4))
+    size  = guide_legend(title="Species richness", order = 2, override.aes = list(fill="black"))
   )
 # p1
 
@@ -200,7 +214,7 @@ p1 <- p1 +
   geom_text(
     data=subset(lay, breed_node==FALSE & label != "High seas"),
     aes(x=x, y=y, label = label),
-    nudge_y = -1.3,
+    nudge_y = -2,
     # nudge_x = .5,
     hjust = 0,
     angle = -45, size = 5.5
@@ -232,13 +246,13 @@ p1 + theme(legend.position = "none")
 # ggsave("figures/test/networks/breed2visit_NOEDGES_top5_timeSUM.png",
   # width=40, height=30, units="cm", dpi=250)
 
-if(assign == "A"){
-  ggsave(paste0(master_figs, "networks/breed2visit_top5_timeSUMX.png"),
-    width=40, height=30, units="cm", dpi=250)
-} else if(assign == "B"){
-  ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
-    width=40, height=30, units="cm", dpi=250)
-}
+# if(assign == "A"){
+#   ggsave(paste0(master_figs, "networks/breed2visit_top5_timeSUMX.png"),
+#     width=40, height=30, units="cm", dpi=250)
+# } else if(assign == "B"){
+#   ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
+#     width=40, height=30, units="cm", dpi=250)
+# }
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
@@ -247,32 +261,32 @@ if(assign == "A"){
 
 
 # dev.new()
-p +
-  geom_text(
-    data=subset(lay, label == "High seas"),
-    aes(x=x, y=y, label = label),
-    nudge_y = + 2.2,
-    hjust = 0.5,
-    size = 7
-  ) +
-  geom_text(
-    data=subset(lay, breed_node==FALSE & label != "High seas"),
-    aes(x=x, y=y, label = label),
-    nudge_y = -1.3, 
-    hjust = 0,
-    size = 5,
-    angle = -90
-  ) +
-  geom_label(
-    data=subset(lay, breed_node==TRUE & label != "High seas"),
-    aes(x=x, y=y, label = label),
-    nudge_y = +2,
-    hjust = 0.5,
-    size = 7,
-    alpha = 0.7, label.size = 0, label.r=unit(0.5, "lines") # label boxes
-  ) +
-  ylim(c(-8, max(lay$y)+2.2)) +
-  theme(legend.position = "none")
+# p +
+#   geom_text(
+#     data=subset(lay, label == "High seas"),
+#     aes(x=x, y=y, label = label),
+#     nudge_y = + 2.2,
+#     hjust = 0.5,
+#     size = 7
+#   ) +
+#   geom_text(
+#     data=subset(lay, breed_node==FALSE & label != "High seas"),
+#     aes(x=x, y=y, label = label),
+#     nudge_y = -1.3, 
+#     hjust = 0,
+#     size = 5,
+#     angle = -90
+#   ) +
+#   geom_label(
+#     data=subset(lay, breed_node==TRUE & label != "High seas"),
+#     aes(x=x, y=y, label = label),
+#     nudge_y = +2,
+#     hjust = 0.5,
+#     size = 7,
+#     alpha = 0.7, label.size = 0, label.r=unit(0.5, "lines") # label boxes
+#   ) +
+#   ylim(c(-8, max(lay$y)+2.2)) +
+#   theme(legend.position = "none")
 
 
 ## SAVE ## 
@@ -283,13 +297,13 @@ p +
 
 
 ## SAVE ##
-if(assign == "A"){
-  ggsave(paste0(master_figs, "networks/breed2visit_top5_timeSUM_abbX.png"),
-    width=40, height=30, units="cm", dpi=250)
-} else if(assign == "B"){
-  ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
-    width=40, height=30, units="cm", dpi=250)
-}
+# if(assign == "A"){
+#   ggsave(paste0(master_figs, "networks/breed2visit_top5_timeSUM_abbX.png"),
+#     width=40, height=30, units="cm", dpi=250)
+# } else if(assign == "B"){
+#   ggsave(paste0(master_figs, "sovereign_B_assign/networks/breed2visit_top5_timeSUM_abbX.png"),
+#     width=40, height=30, units="cm", dpi=250)
+# }
 
 
 ## Save data frame of top or all connections ## 

@@ -1,4 +1,10 @@
-## Running analysis with stricter threshold on representativeness ##
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+### Script to call the functions for each step of the Pol. Con/Res. project ### 
+# threshold adjustment
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#-----------------------------------------------------------------------------#
+
+## --- Running analysis with stricter threshold on representativeness --- ##
 
 pacman::p_load(dplyr, sp, raster, stringr, ggplot2, lubridate, cowplot)
 
@@ -84,23 +90,8 @@ rfmos <- do.call("rbind", str_split(tools::list_files_with_exts(shp_folder, "shp
 #   dir.create(paste0(paste0(master,"ovrfmo/"), one))
 # }
 
-# filter to High seas points only # ~~~~~~~~~~~~~~~~~~~
-ins <- paste0(master, "oveez/")
-out <- paste0(master, "oveez_hs/")
-
-files <- list.files(ins, full.names = T)
-filename <- list.files(ins, full.names = F)
-
-for(i in 1:length(files)){
-  print(i)
-  one <- readRDS(files[i])
-  one.f <- dplyr::filter(one, jur == "High seas")
-  # print(paste(nrow(one), "-->", nrow(one.f), "pnts"))
-  saveRDS(one.f, paste0(out, filename[i]))
-}
-
 # now use High seas points only for RFMO analysis ~~~~~~
-ins  <- paste0(master, "oveez_hs/")
+ins <- paste0(master, "oveez/")
 main <- paste0(master, "ovrfmo/")
 outs <- paste0(list.files(main, full.names = T, recursive = F), "/") # need to have one folder for each RFMO
 

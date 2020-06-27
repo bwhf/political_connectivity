@@ -1,0 +1,38 @@
+---
+title: "Political responsibility for albatrosses and large petrels"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Overview ###
+
+This repository contains scripts and data associated with the manuscript "Global political responsibility for the conservation of albatrosses and large petrels". 
+
+The scripts found here may be used to identify the political areas (e.g. exclusive economic zones, regional fisheries management competence areas) visited by a set of tracked animals. Ultimately, this allows for the quantification of species richness and time spent (monthly and annual) in these political areas.
+
+The way this analysis works is that each analytical step has a devoted function (found in the folder "scripts/final/source_fxns/") which can be called in the order of analysis from the script "scripts/final/callAnalysisFxns.r". This calling script is meant to be run in order, and contains comments to help guide the user through each step.
+
+This will produce data which can then be further analyzed or visualized using the scripts in the "maps/" "networks/", and "data_summary/" folders.  
+
+### Data 
+
+The underlying data for these scripts are tracking data and population size estimates. In order to work through this analysis from the beginning [i.e. from prep() function on] tracking data must be stored as .csv files named as follows: "species genus_population_devicetype_datasetID.csv".
+
+```{r datafiles graphic, echo=FALSE, out.height='80%', out.width='80%', fig.align="center"} 
+knitr::include_graphics("README/datafiles.png", dpi=50) 
+``` 
+
+The tracking data file should follow the standard in the BirdLife Intl. Seabird Tracking Database, and thereby include at minimum data columns named in the following way: "dataset_id", "scientific_name", "site_name", "device", "track_id", "bird_id", "breed_stage", "breed_status", "date_gmt" "time_gmt", "latitude", "longitude".
+
+```{r data_format graphic, echo=FALSE, out.height='100%', out.width='100%', fig.align="center"} 
+knitr::include_graphics("README/data_format.png", dpi=50) 
+``` 
+
+### Acknowledgements
+
+This project has received funding from the European Union’s Horizon 2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement No 766417.
+
+This communication reflects only the authors’ view and the Research Executive Agency of the European Union is not responsible for any use that may be made of the information it contains. 

@@ -1,13 +1,13 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create maps of tracking data binned into hex.grid, and re-centering geodata to pacific perspective # 
-# Time spent #
+# Time spent # 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #-------------------------------------------------------------------------------------------------------
 
 pacman::p_load(sf, sp, dggridR, tidyverse, lubridate, lwgeom, viridis)
 
-## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month
 # thresh <- "high"
 thresh  <- "low"
 
@@ -24,7 +24,7 @@ if(thresh == "high"){
 assign <- "A"
 # assign <- "B"
 
-popData <- read.csv('data/population_estimates.csv', stringsAsFactors = F)
+popData <- read.csv('data/analysis/population_estimates.csv', stringsAsFactors = F)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,7 +131,6 @@ for( i in 1:length(spp)){
   
 }
 
-
 cntsum_allTD <- do.call("rbind", cntsum.list)
 
 # summarize (bin) by cell
@@ -142,7 +141,7 @@ cellcnt_sum <- cntsum_allTD %>% group_by(cell) %>% summarise(
 grid <- dgcellstogrid(spatial, cells = as.numeric(cellcnt_sum$cell), frame=TRUE, wrapcells=TRUE) # get only cells which contained fixes
 grid <- merge(grid, cellcnt_sum, by.x="cell")
 
-saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_452km_timespent.rds"))
+# saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_452km_timespent.rds"))
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -183,6 +182,22 @@ grid.sf <- st_as_sf(grid.sp)
 # all(st_is_valid(grid.sf)) # check validity 
 grid.sf <- st_make_valid(grid.sf)
 # all(st_is_valid(grid.sf)) # check validity 
+
+## Save or Read in grid of data (in WGS84) ~~~~~~~~~~
+
+st_write(grid.sf, paste0(master, "global_grids/timespent_grid.shp"), delete_layer =T)
+
+# IF GRID ALREADY EXISTS: Read in  ~~~~~~~~~~
+
+if(!exists("grid.sf")){ grid.sf <- st_read(paste0(master, "global_grids/timespent_grid.shp")) }
+
+# decide recentering and projection objects ~~~~~~~~~~~~~~~~~~~~~~
+shift <- -153
+central_meridian <- 360 + shift
+proj <- sprintf("+proj=kav7 +lon_0=%i", central_meridian)
+# proj <- sprintf("+proj=kav7 +lon_0=%i", shift)
+
+
 
 # Countries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 x <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf") # load country dataset
@@ -248,7 +263,7 @@ m3 <- ggplot() +
   #   breaks = scales::trans_breaks("sqrt", function(x) x ^ 2),
   #   labels = function(x) round(x, 1)
   #   ) + # single hue color palette
-  geom_sf(data = re_eez_prj, fill=NA,  color="grey50") +        # EEZ borders
+  geom_sf(data = re_eez_prj, fill=NA,  color="grey50", size=.9) +        # EEZ borders
   geom_sf(data = re_world_prj, fill="grey40", color="grey40") +
   # geom_sf(data = re_world_wt, fill="grey55", color="grey25") +                # country polygons
   # geom_sf(data = re_world_wt, fill="grey85", color="grey85") +                # country polygons

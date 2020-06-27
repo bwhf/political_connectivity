@@ -66,14 +66,15 @@ sp_cover <- alltimes %>% group_by(scientific_name, adj_site_name) %>% summarise(
   ) %>% dplyr::select(scientific_name, n_sites, glob_pop, glob_pop_cov, glob_ann_time, glob_ann_cov)
 
 sum(sp_cover$glob_pop)   # global total number of breeding large petrels 
-sum(sp_cover$glob_pop) + 15848 # global total + S. Royal
+# sum(sp_cover$glob_pop) + 15848 # global total + S. Royal
 sum(PD$pop_estimate_IND) # total covered
 sum(sp_cover$glob_ann_time)
-sum(sp_cover$glob_ann_time)/ (sum(PD$pop_estimate_IND)) # global total + S. Royal
-sum(sp_cover$glob_ann_time)/ (sum(sp_cover$glob_pop) + 15848) # global total + S. Royal
+round(sum(sp_cover$glob_ann_time) / (sum(PD$pop_estimate_IND)), 2)
+# sum(sp_cover$glob_ann_time) / (sum(sp_cover$glob_pop) + 15848) # global total + S. Royal
 
-mean(sp_cover$glob_pop_cov)   # average coverage of global breeding population for each species
-sum(sp_cover$glob_pop_cov)/40 # average including S. Royal Albatross (no data)
+round(mean(sp_cover$glob_pop_cov))   # average coverage of global breeding population for each species
+c(min(sp_cover$glob_pop_cov), max(sp_cover$glob_pop_cov)) # range
+# sum(sp_cover$glob_pop_cov)/40 # average including S. Royal Albatross (no data)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,6 +108,16 @@ annual_time <- nation %>% left_join(abnj, by="scientific_name", all=T) %>% mutat
 
 
 sp_sum <- sp_cover %>% left_join(annual_time, by="scientific_name") %>% print(n=Inf)
+
+## add number of tracks to table
+track_summary <- read.csv( "data/analysis/summary_tables/track_summary_sp_site.csv", stringsAsFactors = F)
+
+n_tracks <- track_summary %>% group_by(scientific_name) %>% summarise(
+  n_tracks = sum(n_tracks),
+  n_birds  = sum(n_birds)
+  )
+
+sp_sum <- merge(sp_sum, n_tracks)
 
 ## SAVE ##
 data.table::fwrite(sp_sum, paste0(master, "summary_tables/sp_time_spent.csv") )
@@ -166,13 +177,116 @@ sp_sum <- sp_sum %>% filter(scientific_name != "Diomedea epomophora")
 sp_sum$common_name <- factor(sp_sum$common_name, levels=unique(sp_sum$common_name[order(sp_sum$family, sp_sum$genus, sp_sum$common_name )]), ordered=TRUE)
 sp_sum$common_name <- factor(sp_sum$common_name, levels=unique(sp_sum$common_name[c(order(sp_sum$family, decreasing = T), order(sp_sum$genus, sp_sum$common_name ))]), ordered=TRUE)
 
-####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~``
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 sp_sum$name <- sp_sum$common_name ## choose which name to use in plots
 
 
-long <- gather(sp_sum, key=type, pair=c("EEZ", "ABNJ", "unknown")) %>% group_by(name) %>% mutate(
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ one plot (horizontal, reverse-direction) showing % pop., % annual time, and % untracked per sp.
+
+sp_sum_plot <- sp_sum %>% mutate(
+  glob_ann_cov = glob_ann_cov,
+  glob_pop_cov  = glob_pop_cov - glob_ann_cov,
+  untracked     = 100 - (glob_pop_cov + glob_ann_cov)
+) %>% dplyr::select(scientific_name, family, name, n_sites, glob_pop_cov, glob_ann_cov, untracked)
+
+long <- tidyr::pivot_longer(sp_sum_plot, cols=c("glob_ann_cov", "untracked", "glob_pop_cov"), names_to="type") %>% group_by(name) %>% mutate(
+  type = factor(type, levels = c("untracked", "glob_pop_cov", "glob_ann_cov"))
+)
+
+long <- long %>% filter(name != "Diomedea epomophora" | name != "Southern Royal Albatross")
+
+
+## add number of birds tracked for labelling 
+track_summary <- read.csv( "data/analysis/summary_tables/track_summary_sp_site_device.csv", stringsAsFactors = F)
+
+n_birds <- track_summary %>% group_by(scientific_name) %>% summarise( n_birds = sum(n_birds))
+
+long <- merge(long, n_birds)
+
+p <- ggplot(long, aes(x=reorder(name, desc(name)), y=-value, fill=type)) +
+  geom_col() + 
+  # scale_fill_manual(values = c("unknown" = "grey80", "ABNJ" = "#e31a1c", "EEZ" = '#08519c'), labels=c("Unknown", "EEZ", "High seas")) + 
+  scale_fill_manual(values = c("untracked" = "grey80", "glob_ann_cov" = 'black', "glob_pop_cov" = 'grey40'), labels=c("Untracked", "Population", "Annual time")) +
+  ylab("% coverage") +
+  xlab(NULL)
+# p
+
+p + 
+  theme(
+    text = element_text(size=14),
+    # axis.text.x = element_text( , hjust = 1, vjust=0.3, size = 16),
+    axis.text.x = element_text( hjust=0.5, size = 16),
+    axis.text.y = element_text(hjust=1, size = 14),
+    axis.title = element_text(size = 18),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.text = element_text(size=14),
+  plot.margin=unit(c(1,0,1,1.5),"cm")
+) +
+  guides(
+    edge_width = guide_legend(title="Strength", order = 1),
+    size  = guide_legend(title="Species richness", order = 2),
+    fill = guide_legend(title="Ocean basin", order = 3),
+    color = guide_legend(title="Jurisdiction", order = 4, override.aes = list(size=4))
+  ) + 
+  scale_x_discrete(expand=c(0,0), name = "", position = "top") +
+  scale_y_continuous(expand=c(0,0), breaks = seq(0, -100, by=-25), labels=seq(0, 100, by=25)) + 
+  geom_text(aes(label= paste0("", n_birds, "")), y=-101.5, nudge_x=0.025, hjust = 1, color="grey30", size=5.4) +
+  coord_flip(clip = 'off') 
+
+
+## SAVE ## 
+ggsave("C:/Users/Martim Bill/Desktop/test/spp_cover_plot5.png", width=10, height=11, device="png")
+
+
+
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Flip the other direction ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+p <- ggplot(long, aes(x=reorder(name, desc(name)), y=value, fill=type)) +
+  geom_col() + 
+  # scale_fill_manual(values = c("unknown" = "grey80", "ABNJ" = "#e31a1c", "EEZ" = '#08519c'), labels=c("Unknown", "EEZ", "High seas")) + 
+  scale_fill_manual(values = c("untracked" = "grey80", "glob_ann_cov" = 'black', "glob_pop_cov" = 'grey40'), labels=c("Untracked", "Population", "Annual time")) +
+  ylab("% coverage") +
+  xlab(NULL)
+# p
+
+p + 
+  theme(
+    text = element_text(size=14),
+    # axis.text.x = element_text( , hjust = 1, vjust=0.3, size = 16),
+    axis.text.x = element_text( hjust=0.5, size = 16),
+    axis.text.y = element_text(hjust=1, size = 14),
+    axis.title = element_text(size = 18),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.text = element_text(size=14),
+    plot.margin=unit(c(1,1.5,1,0),"cm")
+  ) +
+  guides(
+    edge_width = guide_legend(title="Strength", order = 1),
+    size  = guide_legend(title="Species richness", order = 2),
+    fill = guide_legend(title="Ocean basin", order = 3),
+    color = guide_legend(title="Jurisdiction", order = 4, override.aes = list(size=4))
+  ) + 
+  # scale_x_discrete(expand=c(0,0), name = "", position = "top") +
+  scale_y_continuous(expand=c(0,0), breaks = seq(0, 100, by=25), labels=seq(0, 100, by=25)) +
+  geom_text(aes(label= paste0("", n_birds, "")), y=106, nudge_x=0.025, hjust = 1, color="grey30", size=5.4) +
+  coord_flip(clip = 'off') 
+
+
+## SAVE ## 
+ggsave("C:/Users/Martim Bill/Desktop/test/spp_cover_plot6.png", width=10, height=11, device="png")
+
+
+#============================================================================================================
+
+#### Individual plots for annual time, and population coverage (combined outside R) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+long <- tidyr::pivot_longer(sp_sum, cols=c("EEZ", "ABNJ", "unknown"), names_to="type") %>% group_by(name) %>% mutate(
   type = factor(type, levels = c("unknown", "EEZ", "ABNJ"))
 )
+
+
 
 # flip horizontally ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -198,28 +312,29 @@ p + theme(
   scale_y_continuous(expand=c(0,0)) + coord_flip()
 
 ## SAVE ## 
-ggsave(paste0(master_figs, "test/global_summaries/spp_global_time_horizontal.png"), width=10, height=11, device="png")
+# ggsave(paste0(master_figs, "test/global_summaries/spp_global_time_horizontal.png"), width=10, height=11, device="png")
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Bar chart of global population coverage per species ## 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-sp_sum$Untracked <- abs(sp_sum$global_pop_cover - 100)
+sp_sum$Untracked <- abs(sp_sum$glob_pop_cov - 100)
 
 # sp_sum$unknown <- ifelse(is.na(sp_sum$unknown) & !is.na(sp_sum$breeding), (100 - sp_sum$breeding), 
 #   ifelse(is.na(sp_sum$breeding) & is.na(sp_sum$non_breeding), 100, sp_sum$unknown) 
 # )
 
-long <- gather(sp_sum, key=type, pair=c("global_pop_cover", "Untracked")) %>% group_by(name) %>% mutate(
-  type = factor(type, levels = c("Untracked", "global_pop_cover"))
+
+long <- tidyr::pivot_longer(sp_sum, cols=c("glob_pop_cov", "Untracked"), names_to="type") %>% group_by(name) %>% mutate(
+  type = factor(type, levels = c("Untracked", "glob_pop_cov"))
 )
 
 long <- long %>% filter(name != "Diomedea epomophora" | name != "Southern Royal Albatross")
 
 ##  flip horizontally and reverse direction
 p <- ggplot(long, aes(x=reorder(name, desc(name)), y=-value, fill=type)) +
-  geom_col() + scale_fill_manual(values = c( "global_pop_cover" = "grey10", "Untracked" = "grey80")) +
+  geom_col() + scale_fill_manual(values = c( "glob_pop_cov" = "grey10", "Untracked" = "grey80")) +
   ylab("% global population covered") +
   xlab(NULL)
 

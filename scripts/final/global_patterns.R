@@ -18,8 +18,8 @@ if(thresh == "high") {
 
 ## Choose whether to analyze UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# assign <- "A"   #UK and Spain
-assign <- "B" #Argentina and Morocco
+assign <- "A"   #UK and Spain
+# assign <- "B" #Argentina and Morocco
 
 
 PD <- read.csv('data/population_estimates.csv', stringsAsFactors = F) # population data 
@@ -55,15 +55,15 @@ tot <- relations %>% group_by(jurisdiction) %>% summarise(                      
   richness  = n_distinct(scientific_name)
 )
 
-visit <- relations %>% group_by(jurisdiction) %>% filter(relation == "Visiting") %>% summarise( # count of species visiting only
+visit <- relations %>% group_by(jurisdiction) %>% dplyr::filter(relation == "Visiting") %>% summarise( # count of species visiting only
   visitonly_rich  = n_distinct(scientific_name)
 )
 
-both <- relations %>% group_by(jurisdiction) %>% filter(relation == "Both") %>% summarise(      # both visiting and breeding spp count
+both <- relations %>% group_by(jurisdiction) %>% dplyr::filter(relation == "Both") %>% summarise(      # both visiting and breeding spp count
   both_rich  = n_distinct(scientific_name)
 )
 
-breed <- relations %>% group_by(jurisdiction) %>% filter(relation == "Breeding") %>% summarise( # count of species only breeding
+breed <- relations %>% group_by(jurisdiction) %>% dplyr::filter(relation == "Breeding") %>% summarise( # count of species only breeding
   breedonly_rich  = n_distinct(scientific_name)
 )
 
@@ -103,7 +103,13 @@ pop_by_jur <- pop_by_jur_spp %>% group_by(jurisdiction) %>% summarise(
 )
 
 ## DF of all angles on richness
-rich <- full_join(tot, visit, by="jurisdiction", all=T) %>% left_join(both, by="jurisdiction", all=T) %>% left_join(breed, by="jurisdiction", all=T) %>% left_join(pop_by_jur, by="jurisdiction") %>% mutate(visit_rich = visitonly_rich + both_rich) %>% dplyr::select(jurisdiction, richness, breed_rich, visit_rich, both_rich, breedonly_rich, visitonly_rich, tot_breeders) %>% arrange(desc(richness))
+rich <- full_join(tot, visit, by="jurisdiction", all=T) %>% left_join(both, by="jurisdiction", all=T) %>% 
+  left_join(breed, by="jurisdiction", all=T) %>% 
+  left_join(pop_by_jur, by="jurisdiction") %>% 
+  mutate(
+    visit_rich = visitonly_rich + ifelse(is.na(both_rich), 0, both_rich)
+    ) %>%
+  dplyr::select(jurisdiction, richness, breed_rich, visit_rich, both_rich, breedonly_rich, visitonly_rich, tot_breeders) %>% arrange(desc(richness))
 
 rich <- rich %>% mutate(
   breed_rich = ifelse(is.na(breed_rich), 0, breed_rich),
@@ -117,15 +123,20 @@ rich <- rich %>% mutate(
 ## Plot ordered by breeding richness ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
 # plots combined in to composites in "patchwork_plots.R" script
 
+# cols <- colorRampPalette(c("blue", "red"))(3)
+# cols <- colorRampPalette(c("dodgerblue2", "firebrick2"))(3)
+cols <- colorRampPalette(c("royalblue1", "firebrick1"))(3)
+
 # make long format for plotting
 p <- rich %>% top_n(n=15, breed_rich) %>% arrange(desc(breed_rich)) %>% mutate(jurisdiction = factor(jurisdiction, levels=c(jurisdiction))) %>% gather("rich_type", "rich", both_rich, breedonly_rich, visitonly_rich) %>% mutate(rich_type = factor(rich_type, levels=c("visitonly_rich",  "both_rich", "breedonly_rich"))) %>% 
   ggplot(aes(x=jurisdiction, y=rich, fill=rich_type)) + geom_col(color="black") + theme_bw() +
-  scale_fill_manual(values = c("grey70","grey35","black"), labels = c(' Visiting', ' Both', ' Breeding')) +
-  # scale_fill_manual(values = c("#fee8c8","#fdbb84","#e34a33"), labels = c(' Visiting', ' Both', ' Breeding')) +
-  # scale_fill_viridis_d(option="cividis", labels = c(' Visiting', ' Both', ' Breeding')) +
+  # scale_fill_manual(values = c("grey70","grey35","black"), labels = c(' Visiting', ' Both', ' Breeding')) + # greyscale
+  # scale_fill_manual(values = c("#fee8c8","#fdbb84","#e34a33"), labels = c(' Visiting', ' Both', ' Breeding')) + #ylw2ora
+  # scale_fill_manual(values = c(cols[1], cols[2], cols[3]), labels = c(' Visiting', ' Both', ' Breeding')) + # BluPurRed
+  scale_fill_viridis_d(begin = 0.15, end = 1, direction = 1, labels = c(' Visiting', ' Both', ' Breeding')) +
   theme(legend.title = element_blank()) 
 # p
-p1 <- p + 
+p2 <- p + 
   ylab("Richness") +
   theme( 
     axis.text.x = element_text( angle = 45, hjust=1, size = 30),
@@ -136,9 +147,9 @@ p1 <- p +
     legend.text = element_text(size = 30),
     plot.margin = unit(c(0.1,0.1,0.1,0.6), "cm")
   ) + 
-  scale_y_continuous(expand=expansion(mult = c(0, .09)))
-  # theme(legend.position = "none")
-
+  scale_y_continuous(expand=expansion(mult = c(0, .09))) +
+  theme(legend.position = "none")
+p2
 ## SAVE ##
 # if(assign == "A"){
 #   ggsave(paste0(master_figs, "barcharts/country_richness_split3_bybreedrichX.png"), width = 13, height = 9)
@@ -149,16 +160,20 @@ p1 <- p +
 
 ## Plot ordered by TOTAL richness ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # make long format for plotting
+cols <- colorRampPalette(c("royalblue1", "firebrick1"))(3)
+
 p <- rich %>% top_n(n=15, richness) %>% arrange(desc(richness)) %>% mutate(jurisdiction = factor(jurisdiction, levels=c(jurisdiction))) %>% gather("rich_type", "rich", both_rich, breedonly_rich, visitonly_rich) %>% mutate(rich_type = factor(rich_type, levels=c("visitonly_rich",  "both_rich", "breedonly_rich"))) %>% 
   ggplot(aes(x=jurisdiction, y=rich, fill=rich_type)) + geom_col(color="black") + theme_bw() +
   scale_fill_manual(values = c("grey70","grey35","black"), labels = c(' Visiting', ' Both', ' Breeding')) +
+  # scale_fill_manual(values = c(cols[1], cols[2], cols[3]), labels = c(' Visiting', ' Both', ' Breeding')) + # BluPurRed
   # scale_fill_manual(values = c("#fee8c8","#fdbb84","#e34a33"), labels = c(' Visiting', ' Both', ' Breeding')) +
+  scale_fill_viridis_d(begin = 0.15, end = 1, direction = 1, labels = c(' Visiting', ' Both', ' Breeding')) +
   theme(    
     legend.title = element_blank(),
     legend.text.align = 0,
     legend.text = element_text(size = 14)
     ) 
-p2 <- p + 
+p1 <- p + 
   ylab("Richness") +
   theme( 
     axis.text.x = element_text( angle = 45, hjust=1, size = 30),
@@ -172,7 +187,7 @@ p2 <- p +
   ) + 
   scale_y_continuous(expand=expansion(mult = c(0, .09)))
   # theme(legend.position = "none")
-
+p1
 
 ## SAVE ##
 # if(assign == "A"){
@@ -196,21 +211,31 @@ sum(x$tot_staying) ## total bird years estimated by our tracking datas (pop cove
 
 timespentsum <- x %>% group_by(jurisdiction) %>% summarise(sum_tot_staying = sum(na.omit(tot_staying))) %>% left_join(x)
 
-# lump together jurisdictions hosting less than XX% of global time
-other <- timespentsum %>% mutate(jurisdiction = if_else(sum_tot_staying/12 < ( (glob_cover$glob_tot) * 0.001), "Other", jurisdiction)) %>% filter(jurisdiction == "Other") %>% group_by(is_origin) %>% summarise(jurisdiction = first(jurisdiction), tot_staying = sum(na.omit(tot_staying)))
+# lump together jurisdictions outside top X
+
+top15 <- timespentsum %>% top_n(n=25, sum_tot_staying)
+top15 <- unique(top15$jurisdiction)
+other <- timespentsum[!timespentsum$jurisdiction %in% top15, ]
+other <- other %>% mutate(jurisdiction = "Other") %>% filter(jurisdiction == "Other") %>% group_by(is_origin) %>% summarise(jurisdiction = first(jurisdiction), tot_staying = sum(na.omit(tot_staying)))
 
 other$sum_tot_staying <- rep(sum(other$tot_staying))
 
 time <- timespentsum %>% mutate(jurisdiction = if_else(sum_tot_staying < ((glob_cover$glob_tot) * 0.001), "Other", jurisdiction)) %>% filter(jurisdiction != "Other") %>% bind_rows(other) 
 
+time <- timespentsum %>% bind_rows(other)
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Horizontal time spent plot 
-p3 <- time %>% top_n(n=20, sum_tot_staying) %>% arrange(sum_tot_staying) %>% mutate(
+time$is_origin <- factor(time$is_origin, levels = c("Visiting", "Breeding"))
+
+p3 <- time %>% top_n(n=25, sum_tot_staying) %>% arrange(sum_tot_staying) %>% mutate(
   jurisdiction = factor(jurisdiction, levels=c("Other", unique(jurisdiction[jurisdiction != "Other"])))) %>% 
-  ggplot(aes(x=reorder(jurisdiction, desc(jurisdiction)), y=tot_staying/1000000, fill=is_origin)) + geom_col(color="black", position = position_stack(reverse = TRUE)) +
+  ggplot(aes(x=reorder(jurisdiction, desc(jurisdiction)), y=tot_staying/1000000, fill=is_origin)) + geom_col(color="black") +
   theme_bw() +
-  scale_fill_manual(values = c("black","grey70"), labels = c(' Breeding',' Visiting')) +
+  # scale_fill_manual(values = c("black","grey70"), labels = c(' Breeding',' Visiting')) +
+  # scale_fill_manual(values = c(cols[3], cols[1]), labels = c(' Breeding',' Visiting')) +
   # scale_fill_manual(values = c("#fee8c8","#e34a33"), labels = c(' Visiting', ' Breeding')) +
+  scale_fill_viridis_d(begin = 0.15, end = 1, direction = 1) +
   theme( 
     axis.text.x = element_text( angle = 45, hjust=1, size = 30),
     axis.text.y = element_text(size = 30),
@@ -224,7 +249,7 @@ p3 <- time %>% top_n(n=20, sum_tot_staying) %>% arrange(sum_tot_staying) %>% mut
   scale_y_continuous(expand=expansion(mult = c(0, .09))) +
   ylab("Bird year (millions)") + 
   theme(legend.position = "none")
-
+p3
 ## Vertical time spent plot #~~~~~~~~~~~~~~~~
 # p <- time %>% top_n(n=20, sum_tot_staying) %>% arrange(desc(sum_tot_staying)) %>% mutate(
 #   jurisdiction = factor(jurisdiction, levels=c(unique(jurisdiction[jurisdiction != "Other"]), "Other"))) %>% 

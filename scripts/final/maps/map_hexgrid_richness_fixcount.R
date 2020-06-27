@@ -12,7 +12,7 @@ source("scripts/final/source_fxns/recenter_map_fxn.r") # mapdata re-centering fu
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ###### Variations ----------------------------------------------------######
 
-## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month) ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Choose whether to use high threshold or low threshold data (i.e. >1 bird per month
 # thresh <- "high"
 thresh  <- "low"
 
@@ -83,6 +83,13 @@ grid.sf <- st_as_sf(grid.sp)
 # all(st_is_valid(grid.sf)) # check validity 
 grid.sf <- st_make_valid(grid.sf)
 # all(st_is_valid(grid.sf)) # check validity 
+
+## Save or Read in grid of data (in WGS84) ~~~~~~~~~~
+
+# st_write(grid.sf, paste0(master, "global_grids/rich_fixcount_grid.shp"))
+# grid.sf <- st_read(paste0(master, "global_grids/rich_fixcount_grid.shp"))
+
+## re-center grid ~~~~~~~~~~~~~~~~~~~~~~~~
 
 re_grid <- recentre(grid.sf, shift) %>% group_by(cell) %>% summarise(  # recenter grid! 
   richness = first(richness),
@@ -158,7 +165,7 @@ m2 <- ggplot() + theme_nothing() + # gets rid of gray box behind map
   # scale_fill_carto_c(type = "quantitative", palette = "DarkMint", breaks=c(1, 5, 10, 15, signif(max(re_grid_wt$richness),1)), direction = -1) +
   # scale_fill_continuous_sequential(palette = "Blues", breaks=c(1, 5, 10, 15, signif(max(re_grid_wt$richness),1))) + # single hue color palette
   scale_fill_continuous_sequential(palette = "Lajolla", breaks=c(1, 5, 10, 15, signif(max(re_grid_wt$richness),1))) +
-  geom_sf(data = re_eez_wt, fill=NA,  color="grey50") +        # EEZ borders
+  geom_sf(data = re_eez_wt, fill=NA,  color="grey50", size=.9) +        # EEZ borders
   # geom_sf(data = re_eez_wt, fill="grey",  color="grey30") +        # EEZ borders
   # geom_sf(data = re_eez_wt, fill="grey",  color="black") +
   geom_sf(data = re_world_wt, fill="grey40", color="grey40") +
@@ -188,7 +195,7 @@ m2 <- ggplot() + theme_nothing() + # gets rid of gray box behind map
 # dev.new()
 # m2
 
-ggsave( "C:/Users/Martim Bill/Desktop/test/plot32.png", plot=m2, width=30, height=20, units="cm", dpi=250)
+ggsave( "C:/Users/Martim Bill/Desktop/test/plot33.png", plot=m2, width=30, height=20, units="cm", dpi=250)
 
 ## Decide where to save ##
 if(assign=="UK"){
@@ -240,7 +247,7 @@ m1 <- ggplot()  +
     #,trans  ="sqrt", breaks = scales::trans_breaks("sqrt", function(x) x ^ 2)
     ) +
   geom_sf(data = re_cols_prj, color = "red", size=3.5, pch=21, fill=NA, stroke = 1) +
-  # geom_sf(data = re_eez_wt, fill="grey", color="white") +
+  geom_sf(data = re_eez_wt, fill=NA,  color="grey50", size=.9) +        # EEZ borders
   geom_sf(data = re_world_wt, fill="grey40", color="grey40") +
   guides( fill = guide_colorbar(title="Fixes")  ) +
   guides( 
@@ -266,7 +273,7 @@ m1 <- ggplot()  +
 # 
 # p
 
-ggsave( "C:/Users/Martim Bill/Desktop/test/plotC5.png", plot = p, width=30, height=20, units="cm", dpi=250)
+ggsave( "C:/Users/Martim Bill/Desktop/test/plotC6.png", plot = m1, width=30, height=20, units="cm", dpi=250)
 
 if(assign=="UK"){
   if(visit_rich == TRUE){
