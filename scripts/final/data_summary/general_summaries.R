@@ -120,7 +120,7 @@ n_tracks <- track_summary %>% group_by(scientific_name) %>% summarise(
 sp_sum <- merge(sp_sum, n_tracks)
 
 ## SAVE ##
-data.table::fwrite(sp_sum, paste0(master, "summary_tables/sp_time_spent.csv") )
+# data.table::fwrite(sp_sum, paste0(master, "summary_tables/sp_time_spent.csv") )
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

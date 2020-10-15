@@ -17,8 +17,8 @@ if(thresh == "high"){
 }
 
 ## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-assign <- "A"
-# assign <- "B"
+# assign <- "A"
+assign <- "B"
 
 if(assign == "A"){
   folder <- paste0(master, "glob_count_rfmo/")
@@ -128,7 +128,6 @@ source("scripts/exploration/network_analysis_breed2visiting_layout.fxn.r")
 
 l <- lay_breed2visit(routes_igraph, which_lay = "RFMO", plotit = F)
 
-
 lay <- data.frame(x = l[, 1], y = l[, 2]) 
 
 lay <- cbind(lay, nodelist)
@@ -170,7 +169,7 @@ lay$nodesize <- ifelse(is.na(lay$breed_rich), lay$visit_rich, lay$breed_rich)
 
 lay$origin_label <- ifelse(lay$breed_node == T, "Breeding", "Visiting")
 
-p2 <-  ggraph(plot_igraph, layout = lay[, c("x", "y")]) +
+p2 <- ggraph(plot_igraph, layout = lay[, c("x", "y")]) +
   geom_rect(
     data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6
   ) +
@@ -201,22 +200,25 @@ p2 <-  ggraph(plot_igraph, layout = lay[, c("x", "y")]) +
   ) + theme(legend.position = "none") 
   
 
-# p2
+p2
 
 # full country names
-p2 <- p2 + coord_cartesian(ylim=c(min(lay$y)-2.5, max(lay$y) + 4.5 )) +
+p2 <- p2 + coord_cartesian(
+  ylim=c(min(lay$y)-3, max(lay$y) + 5 ),
+  clip = "off"
+  ) +
   geom_text(
     data=subset(lay, breed_node==FALSE),
     aes(x=x, y=y, label = label),
     size=4.75,
-    nudge_y = -1.1,
+    nudge_y = -1.3,
     hjust = 0,
     angle = -45, size = 6
   ) +
   geom_richtext(
     data=subset(lay, breed_node==TRUE),
     aes(x=x, y=y, label = label),
-    nudge_y = +.5,
+    nudge_y = +.6,
     hjust = 1,
     angle = -45, size = 6, 
     label.size = 0, label.r=unit(0.25, "lines"), label.color = NA, fill=alpha("white", 0)

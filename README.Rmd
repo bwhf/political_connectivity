@@ -19,13 +19,13 @@ This will produce data which can then be further analyzed or visualized using th
 
 ### Data 
 
-The underlying data for these scripts are tracking data and population size estimates. In order to work through this analysis from the beginning [i.e. from prep() function on] tracking data must be stored as .csv files named as follows: "species genus_population_devicetype_datasetID.csv".
+The underlying data for these scripts are tracking data and population size estimates. In order to work through this analysis from the beginning [i.e. from prep() function on] tracking data must be stored as .csv files named as follows: "genus species_population_devicetype_datasetID.csv".
 
 ```{r datafiles graphic, echo=FALSE, out.height='80%', out.width='80%', fig.align="center"} 
 knitr::include_graphics("README/datafiles.png", dpi=50) 
 ``` 
 
-The tracking data file should follow the standard in the BirdLife Intl. Seabird Tracking Database, and thereby include at minimum data columns named in the following way: "dataset_id", "scientific_name", "site_name", "device", "track_id", "bird_id", "breed_stage", "breed_status", "date_gmt" "time_gmt", "latitude", "longitude".
+The tracking data files should follow the standard in the BirdLife Intl. Seabird Tracking Database, and thereby include at minimum data columns named in the following way: "dataset_id", "scientific_name", "site_name", "device", "track_id", "bird_id", "breed_stage", "breed_status", "date_gmt" "time_gmt", "latitude", "longitude".
 
 ```{r data_format graphic, echo=FALSE, out.height='100%', out.width='100%', fig.align="center"} 
 knitr::include_graphics("README/data_format.png", dpi=50) 

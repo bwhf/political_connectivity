@@ -24,7 +24,7 @@ if(thresh == "high"){
 assign <- "A"
 # assign <- "B"
 
-popData <- read.csv('data/analysis/population_estimates.csv', stringsAsFactors = F)
+popData <- read.csv('data/population_estimates.csv', stringsAsFactors = F)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

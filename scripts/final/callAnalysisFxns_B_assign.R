@@ -8,8 +8,9 @@
 
 pacman::p_load(dplyr, sp, raster, stringr, ggplot2)
 #----------------------------------------------------------------------------#
-a
 ## ANALYSIS STEPS ## ---------------------------------------------------------
+
+master <- "data/analysis/sovereign_B_assign/"
 
 # Step 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Overlay each data set on an EEZ polygon layer ####
@@ -41,10 +42,10 @@ shp_folder <- "spatial_data/RFMOs_ofinterest" # folder containing individual RFM
 rfmos <- do.call("rbind", str_split(tools::list_files_with_exts(shp_folder, "shp", full.names = F), pattern = fixed(".")))[,1]
 
 # make output folders for each RFMO (need a vector of RFMO names ['rfmos'])
-# for(i in 1:length(rfmos)){
-#   one <- rfmos[[i]]
-#   dir.create(paste0(master, "ovrfmo/", one))
-# }
+for(i in 1:length(rfmos)){
+  one <- rfmos[[i]]
+  dir.create(paste0(master, "ovrfmo/", one))
+}
 
 # now use High seas points only for RFMO analysis ~~~~~~
 ins <- paste0(master, "oveez/")  
@@ -76,10 +77,10 @@ birddays(inFolder = folder, by = "month", over = "EEZ", outFolder = out)
 
 # RFMO analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # make output folders for each RFMO (need a vector of RFMO names ['rfmos'])
-# for(i in 1:length(rfmos)){
-#   one <- rfmos[[i]]
-#   dir.create(paste0(master, "birddays_rfmo/", one))
-# }
+for(i in 1:length(rfmos)){
+  one <- rfmos[[i]]
+  dir.create(paste0(master, "birddays_rfmo/", one))
+}
 
 main_in <- paste0(master, "ovrfmo/")
 ins <- paste0(list.files(main_in, full.names = T, recursive = F), "/")

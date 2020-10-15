@@ -19,8 +19,8 @@ if(thresh == "high"){
 }
 
 ## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-assign <- "A"
-# assign <- "B"
+# assign <- "A"
+assign <- "B"
 
 if(assign == "A"){
   folder <- paste0(master, "glob_count/")
@@ -172,7 +172,6 @@ p1 <- ggraph(plot_igraph, layout = lay[, c("x", "y")]) +
     data = boxes, mapping=aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill = ocean_basin), alpha=0.6
     ) +
   scale_fill_discrete( guide = guide_legend(title="Ocean basin", order = 2) ) +
-  
   geom_edge_link(
     aes(width = weight*100), lineend = "round", colour = "black", show.legend = NA, alpha=0.8
     ) +
@@ -204,11 +203,14 @@ lay$label <- ifelse(lay$label == "Disputed Japan/Russia", "(Japan/Russia)",
   ifelse(lay$label == "Disputed Mauritius/United Kingdom", "(Mauritius/UK)", lay$label)
 )
 # dev.new()
-p1 <- p1 +
+p1 <- p1 + coord_cartesian(
+  ylim=c(-8, max(lay$y)+4.25),
+  clip = "off"
+  ) +
   geom_text(
     data=subset(lay, label == "High seas"),
     aes(x=x, y=y, label = label),
-    nudge_y = +2,
+    nudge_y = +4,
     hjust = 0.5, size=6
   ) +
   geom_text(
@@ -227,12 +229,12 @@ p1 <- p1 +
     angle = -45, size = 6, 
     label.size = 0, label.r=unit(0.75, "lines"), label.color = NA, fill=alpha("white", 0.7) # label boxes
   ) +
-  ylim(c(-8, max(lay$y)+2)) +
+  # ylim(c(-8, max(lay$y)+2)) +
   # legends
   theme(
     legend.text = element_text(size=16),
-    legend.title = element_text(size=16) 
-  )
+    legend.title = element_text(size=16)
+  ) #+ coord_cartesian(clip = "off", expand = TRUE)
 
 p1 + theme(legend.position = "none")
 
