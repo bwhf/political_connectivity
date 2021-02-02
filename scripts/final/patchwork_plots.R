@@ -2,17 +2,19 @@
 
 pacman::p_load(patchwork)
 
-# m1 <- p # map of fixcout density
-# m2 <- p # map of species richness
-# m3 <- p # map of time spent density
+# m1 <- readRDS("data\\analysis\\global_grids\\fixcount_map.rds" ) # map of fixcout density
+# m2 <- readRDS("data\\analysis\\global_grids\\richness_map.rds" ) # map of species richness
+# m3 <- readRDS("data\\analysis\\global_grids\\timespent_map.rds") # map of time spent density
+
 
 # lay <- m1 / m2 / m3 + plot_annotation(tag_levels = 'a') & theme(plot.tag = element_text(size = 35))
-lay <- m1 / m2 / m3 + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 35))
+lay <- m1 / m2 / m3 + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 35, face = "plain"))
 
 # lay <- m1 / m2 / m3 + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 35), plot.tag.position = c(0.01, .17))
 # lay <- m1 / m2 / m3 + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 35), plot.tag.position = c(.95, .95))
-ggsave("C:/Users/Martim Bill/Desktop/test/plotD17.png", plot=lay, width=26, height=47, units="cm", dpi=300)
-ggsave("C:/Users/Martim Bill/Desktop/test/plotD17.pdf", plot=lay, width=26, height=47, units="cm", dpi=300)
+ggsave("C:/Users/Martim Bill/Desktop/test/plotD17.png", plot=lay, width=26, height=47, units="cm", dpi=600)
+ggsave("C:/Users/Martim Bill/Desktop/test/plotD17.pdf", plot=lay, width=26, height=47, units="cm", dpi=600)
+
 
 lay <- m1 / m2 / m3 + plot_layout(guides = 'collect') & theme(legend.justification = "left", aspect.ratio=1)
 ggsave("C:/Users/Martim Bill/Desktop/test/plotD4.png", plot = lay, width=25, height=45, units="cm", dpi=250)
@@ -35,14 +37,15 @@ lay <- (p1 / p2) - p3 + plot_layout(guides = 'collect')
 # ggsave("C:/Users/Martim Bill/Desktop/test/plotE6.png", plot = lay, width=70, height=40, units="cm", dpi=250)
 
 # lay + plot_annotation(tag_levels = 'a') & theme(plot.tag = element_text(size = 55))
-lay + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 50))
-
+lay + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = ggsave("C:/Users/Martim Bill/Desktop/test/plotD17.pdf", plot=lay, width=26, height=47, units="cm", dpi=600)
+))
+lay + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 55))
 lay + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 55), plot.tag.position = c(.0, .97))
 lay + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 55), plot.tag.position = c(.95, .93))
 
 # ggsave("C:/Users/Ma7rtim Bill/Desktop/test/plotE14A.png", width=70, height=40, units="cm", dpi=250) # red2blue
-ggsave("C:/Users/Martim Bill/Desktop/test/plotE18.png", width=70, height=40, units="cm", dpi=600) # greyscale
-ggsave("C:/Users/Martim Bill/Desktop/test/plotE18.pdf", width=70, height=40, units="cm", dpi=600)
+ggsave("C:/Users/Martim Bill/Desktop/test/plotE17.png", width=70, height=40, units="cm", dpi=600) # greyscale
+ggsave("C:/Users/Martim Bill/Desktop/test/plotE17.pdf", width=70, height=40, units="cm", dpi=600)
 
 dev.new()
 
@@ -98,8 +101,8 @@ ggsave("C:/Users/Martim Bill/Desktop/test/AAA5.png", plot = lay, width=50, heigh
 
 # lay <- (p5 + p4) / p_weight + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 50))
 lay <- (p5 / p4 / p_weight) + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 50))
-# lay
+lay
 
-ggsave("C:/Users/Martim Bill/Desktop/test/AAB4.png", plot = lay, width=25, height=60, units="cm", dpi=600)
+ggsave("C:/Users/Martim Bill/Desktop/test/AAB5.png", plot = lay, width=25, height=60, units="cm", dpi=600)
 
 

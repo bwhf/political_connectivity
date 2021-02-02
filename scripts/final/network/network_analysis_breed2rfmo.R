@@ -17,8 +17,8 @@ if(thresh == "high"){
 }
 
 ## Choose whether to analyse UK-assigned or Argentina-assigned data ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# assign <- "A"
-assign <- "B"
+assign <- "A"
+# assign <- "B"
 
 if(assign == "A"){
   folder <- paste0(master, "glob_count_rfmo/")
@@ -77,7 +77,9 @@ edgelist_full <- visitsum %>%
   group_by(origin, jurisdiction) %>%
   summarise(
     weight = sum(glob_ann_prop),
-    n_spp  = n_distinct(scientific_name)) %>%
+    n_spp  = n_distinct(scientific_name),
+    spp = paste(unique(scientific_name), collapse=", ")
+  ) %>%
   ungroup() %>%
   dplyr::filter(!origin == jurisdiction) # remove self links
 ## filter EDGES to top N number of visited countries per origin
@@ -303,7 +305,7 @@ lay$label <- basin_class$abb[match(lay$label, basin_class$jurisdiction)]
 
 edges_topn_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = max(na.omit(breed_rich))) %>% right_join(edges_topn, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
 
-edgelist_full_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = max(na.omit(breed_rich)))  %>% right_join(edgelist_full, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
+edgelist_full_summ <- nodelist %>% group_by(label) %>% summarise(breed_rich = max(na.omit(breed_rich)))  %>% right_join(edgelist_full, by=c("label"="origin")) %>% dplyr::select(label, breed_rich, jurisdiction, weight, n_spp, spp) %>% rename(origin=label) %>% arrange(origin, desc(weight)) %>% mutate(weight=weight*100)
 
 
 ## SAVE ##

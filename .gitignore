@@ -14,6 +14,7 @@ data/analysis/month_filtered/
 data/analysis/noeqx_dnsmpl/
 data/analysis/oveez/
 data/analysis/ovrfmo/
+data/analysis/bird_thresh/
 data/analysis/bird_thresh/birddays_eez/
 data/analysis/bird_thresh/birddays_rfmo/
 data/analysis/bird_thresh/month_filtered/
@@ -23,6 +24,7 @@ data/analysis/sovereign_B_assign/birddays_eez/
 data/analysis/sovereign_B_assign/birddays_rfmo/
 data/analysis/sovereign_B_assign/oveez/
 data/analysis/sovereign_B_assign/ovrfmo/
+data/analysis/summary_tables/CLEAN/
 data2publish/
 data_phenology/
 data_summaries/
@@ -31,6 +33,7 @@ data_test/
 figures/
 manuscript/
 notes/
+press_release/
 spatial_data/
 scripts/exploration/
 scripts/geodata/

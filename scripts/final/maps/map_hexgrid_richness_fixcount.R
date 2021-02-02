@@ -1,6 +1,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create maps of tracking data binned into hex.grid, and re-centering geodata to pacific perspective #
 # Richness and fixcount #
+#*** projection transformations in this script only work with R<4.0 and lwgeom versions <2.0
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #-------------------------------------------------------------------------------------------------------
@@ -192,8 +193,8 @@ m2 <- ggplot() + theme_nothing() + # gets rid of gray box behind map
   ) +
   coord_sf(datum = NA)
 # 
-# dev.new()
-# m2
+dev.new()
+m2
 
 ggsave( "C:/Users/Martim Bill/Desktop/test/plot33.png", plot=m2, width=30, height=20, units="cm", dpi=250)
 

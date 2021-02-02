@@ -1,6 +1,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create maps of tracking data binned into hex.grid, and re-centering geodata to pacific perspective # 
 # Time spent # 
+#*** projection transformations in this script only work with R<4.0 and lwgeom versions <2.0
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #-------------------------------------------------------------------------------------------------------
@@ -185,7 +186,7 @@ grid.sf <- st_make_valid(grid.sf)
 
 ## Save or Read in grid of data (in WGS84) ~~~~~~~~~~
 
-st_write(grid.sf, paste0(master, "global_grids/timespent_grid.shp"), delete_layer =T)
+# st_write(grid.sf, paste0(master, "global_grids/timespent_grid.shp"), delete_layer =T)
 
 # IF GRID ALREADY EXISTS: Read in  ~~~~~~~~~~
 
