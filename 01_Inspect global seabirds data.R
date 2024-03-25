@@ -7,7 +7,7 @@
   library(dlookr)
 
 # Load and combine csv file ----
-  in_dir <- c("/Volumes/Extreme Pro/GST_Data/raw") # set input directory
+  in_dir <- c("/Volumes/Extreme_Pro/USC_PhD/Global_Seabird_Tracking/GST_Data/raw") # set input directory
   files <- dir(in_dir, full.names = TRUE) # get file names
   splist <- basename(files) # create string of file name
   dat <- list.files(in_dir, pattern = "\\.csv$", full.names = TRUE)
@@ -21,6 +21,17 @@
   
   all_nogls <- all_nogls%>%
     separate(scientific_name, into = c("genus", "species"), sep = " ", remove = FALSE)
+  
+  check_year <- all_nogls %>% 
+    group_by(scientific_name, common_name, genus, species, colony_name, device, bird_id, Year) %>%
+    summarise()
+  
+  check_year1 <- all_nogls %>% 
+    group_by(scientific_name, common_name, genus, species, colony_name, device, Year) %>%
+    summarise(n = n())
+  
+  Post2014 <- check_year1 %>%
+    filter(Year >= 2014)
   
   # locs per day 
   loc_per_day <- all_nogls %>% group_by(genus, species, scientific_name, track_id, Year, yday) %>% summarise(lpd = n()) 
