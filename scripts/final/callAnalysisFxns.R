@@ -97,11 +97,11 @@ folder <- "data/analysis/month_filtered/"
 files <- list.files(folder)
 
 ## run for one species
-# species <- "Thalassarche melanophris"
-# files <- files[str_detect(files, species)]
+species <- "Calonectris.borealis_Madeira.rds"
+files <- files[str_detect(files, species)]
 
 # repo <- "figures/test/annual_coverage_spp.site/" 
-repo <- "figures/sp.site_annual_coverage/" 
+repo <- "data/analysis/figures/sp.site_annual_coverage/" 
 
 annualCover_plot(files=files, inFolder = folder, byYear = F, savePlot = T, saveFolder = repo)
 
@@ -120,9 +120,9 @@ folder <- "data/analysis/month_filtered/"
 files <- list.files(folder)
 
 ## select one species to test 
-# species <- "Calonectris borealis"
 # files <- list.files(folder)
-# files <- files[str_detect(files, species)]
+files <- files[str_detect(files, species)]
+species <- files[1]
 
 # EEZ analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 out <- "data/analysis/oveez/"
@@ -130,7 +130,7 @@ out <- "data/analysis/oveez/"
 
 ## Unioned land and EEZ dataset ## 
 # download this EEZ-Land dataset here: http://www.vliz.be/en/imis?dasid=6406&doiid=403
-eez_cnt <- raster::shapefile("spatial_data/shapefiles_EEZ_countries/union_countries_EEZs/EEZ_Land_v3_202030.shp", use_iconv = TRUE, encoding = "UTF-8")
+eez_cnt <- raster::shapefile("data/spatial_data/shapefiles_EEZ_countries/EEZ_Land_v3_202030.shp", use_iconv = TRUE, encoding = "UTF-8")
 
 overJur(inFolder = folder, files=NULL, over_which = "EEZ", spatial = eez_cnt, filter_landlocked=TRUE, assign="A", outFolder = out)
 

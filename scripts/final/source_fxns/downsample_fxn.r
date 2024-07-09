@@ -8,7 +8,7 @@
 # outFolder: if saveit=T, specify the path where the Rdata files should be saves (MUST end in "/")
 # interval: between points time interval (h) to set data to
 
-downsample <- function(species, inFolder, outFolder, interval=24, redo=TRUE, hists=FALSE, saveit=TRUE, GLS=FALSE) {
+downsample <- function(species, inFolder, outFolder, interval=24, redo=TRUE, hists=TRUE, saveit=TRUE, GLS=FALSE) {
   
   pacman::p_load(lubridate, tools)
   

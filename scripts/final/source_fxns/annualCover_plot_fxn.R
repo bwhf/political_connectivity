@@ -101,7 +101,7 @@ annualCover_plot <- function(files, inFolder, byYear=FALSE, pheno=NULL, savePlot
         scale_x_continuous(breaks=c(32,91,152,213,274,335), labels=month.abb[c(2,4,6,8,10,12)], expand=c(0,0)) +
         scale_y_continuous(expand = expand_scale(mult = c(0, .05))) +
         facet_wrap(~year, scales="free_y", dir="v") +
-        ggtitle(paste(first(tab1$scientific_name), first(tab1$site_name), sep=" - ")) +
+        ggtitle(paste(first(tab$scientific_name), first(tab$site_name), sep=" - ")) +
         colScale +  # device colors
         theme_bw()
       
