@@ -46,7 +46,7 @@ files
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-spatial <- dgconstruct(spacing=360, metric=TRUE, resround='nearest')
+spatial <- dgconstruct(spacing=100, metric=TRUE, resround='nearest') # spacing unit  CLS (km)
 
 wgs84 <- sp::CRS('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs') # WGS for spatializing
 
@@ -134,23 +134,96 @@ for( i in 1:length(spp)){
 
 cntsum_allTD <- do.call("rbind", cntsum.list)
 
-# summarize (bin) by cell
-cellcnt_sum <- cntsum_allTD %>% group_by(cell) %>% summarise(
-  timespent = sum(na.omit(tot_atatime)) / 12   # either x/12 for BIRDYEAR or just sum for BIRDMONTH
+# summarize (bin) by species and cell monthly
+cellcnt_sp_sum_mth <- cntsum_allTD %>% 
+  group_by(scientific_name, month, cell) %>% 
+  summarise(timespent = sum(na.omit(tot_atatime))   # bird days for each month?
+  )
+
+# create grid for each species
+# create list to store grid for all species
+# monthly
+grid_allsp_mth <- data.frame(
+  cell = numeric(),  # or specify other types such as numeric(), integer(), etc.
+  scientific_name = character(),
+  month = numeric(),
+  timespent = numeric(),
+  geometry = st_sfc(),
+  stringsAsFactors = FALSE
+)
+grid_allsp_mth$geometry <- st_sfc()
+
+for (i in 1:length(spp)) {
+  sp <- spp[[i]]
+  cell_sp <- cellcnt_sp_sum_mth %>% filter(scientific_name == sp)
+  grid_sp_mth <- dgcellstogrid(spatial, cells = as.numeric(cell_sp$cell)) # get only cells which contained fixes
+  grid_sp_mth <- grid_sp_mth %>% rename("cell" = "seqnum")
+  grid_sp_mth <- merge(grid_sp_mth, cellcnt_sp_sum_mth, by.x="cell")
+  grid_allsp_mth <- bind_rows(grid_allsp_mth, grid_sp_mth)
+}
+gasm <- unique(grid_allsp_mth)
+
+saveRDS(gasm, paste0(master, "glob_hexgrid/global_hexgrid_95km_timespent_byspp_mth.rds"))
+
+# annually
+# summarize (bin) by species and cell monthly
+cellcnt_sp_sum <- cntsum_allTD %>% 
+  group_by(scientific_name, cell) %>% 
+  summarise(timespent = sum(na.omit(tot_atatime))   # bird days for each month?
+  )
+# create grid for each species
+# create list to store grid for all species
+grid_allsp <- data.frame(
+  cell = numeric(),  # or specify other types such as numeric(), integer(), etc.
+  scientific_name = character(),
+  timespent = numeric(),
+  geometry = st_sfc(),
+  stringsAsFactors = FALSE
 )
 
-grid <- dgcellstogrid(spatial, cells = as.numeric(cellcnt_sum$cell), frame=TRUE, wrapcells=TRUE) # get only cells which contained fixes
+for (i in 1:length(spp)) {
+  sp <- spp[[i]]
+  cell_sp <- cellcnt_sp_sum %>% filter(scientific_name == sp)
+  grid_sp <- dgcellstogrid(spatial, cells = as.numeric(cell_sp$cell)) # get only cells which contained fixes
+  grid_sp <- grid_sp %>% rename("cell" = "seqnum")
+  grid_sp <- merge(grid_sp, cellcnt_sp_sum, by.x="cell")
+  grid_allsp <- bind_rows(grid_allsp, grid_sp)
+}
+gas <- unique(grid_allsp)
+
+saveRDS(gas, paste0(master, "glob_hexgrid/global_hexgrid_95km_timespent_byspp_ann.rds"))
+
+# summarize (bin) by cell and month
+cellcnt_sum <- cntsum_allTD %>% 
+  group_by(month, cell) %>% 
+  summarise(  timespent = sum(na.omit(tot_atatime))   # either x/12 for BIRDYEAR or just sum for BIRDMONTH
+)
+
+grid <- dgcellstogrid(spatial, cells = as.numeric(cellcnt_sum$cell)) # get only cells which contained fixes
+grid <- grid %>% rename("cell" = "seqnum")
 grid <- merge(grid, cellcnt_sum, by.x="cell")
 
-# saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_452km_timespent.rds"))
+saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_95km_timespent_allspp_mth.rds"))
+
+# summarize (bin) by cell yearly
+cellcnt_sum <- cntsum_allTD %>% 
+  group_by(cell) %>% 
+  summarise(  timespent = sum(na.omit(tot_atatime))/12   # either x/12 for BIRDYEAR or just sum for BIRDMONTH
+  )
+
+grid <- dgcellstogrid(spatial, cells = as.numeric(cellcnt_sum$cell)) # get only cells which contained fixes
+grid <- grid %>% rename("cell" = "seqnum")
+grid <- merge(grid, cellcnt_sum, by.x="cell")
+
+saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_95km_timespent_allspp_ann.rds"))
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Make map ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-source("C:/Users/Martim Bill/Documents/R/source_scripts/recenter_map_fxn.r") # mapdata re-centering function
+source("/Users/bwhf/Documents/GitHub/political_connectivity/scripts/final/source_fxns/recenter_map_fxn.R") # mapdata re-centering function
 
-if(!exists("grid")){ grid <- readRDS(paste0(master, "glob_hexgrid/global_hexgrid_452km_timespent.rds")) }
+if(!exists("grid")){ grid <- readRDS(paste0(master, "glob_hexgrid/global_hexgrid_95km_timespent.rds")) }
 
 
 # recentering and projection objects

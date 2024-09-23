@@ -14,12 +14,12 @@ prep <- function(inFolder, standard, files=NULL, outFolder){
   
   pacman::p_load(stringr, data.table, dplyr)
   
-  files <- list.files(inFolder)
+  files <- list.files("data/all_TD/")
   
   report.list <- vector(mode = "list", length = length(files))
   
   for(i in 1:length(files)){
-    print(i)
+    print(paste0(c(i, files[i])))
     
     # 1 # Remove unnecessary columns ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     one <- as.data.frame(data.table::fread(paste(inFolder, files, sep="")[i], integer64 = "character"))
@@ -65,16 +65,16 @@ prep <- function(inFolder, standard, files=NULL, outFolder){
     
     newone <- dplyr::filter(xxx, latitude < 65 & latitude > -75)
     # print(paste( (nrow(newTD) - nrow(newTDX)), "of", nrow(newTD), "removed,", round((nrow(newTDX) / nrow(newTD) * 100) - 100), "%"))
-    
+
     report <- data.frame(
-      "scientific_name" = rep(newone$scientific_name), 
-      "site_name" = rep(newone$site_name), 
-      "dataset_id" = rep(newone$dataset_id), 
-      "n_pnts_rmvd" = (nrow(xxx) - nrow(newone)), 
+      "scientific_name" = rep(newone$scientific_name),
+      "site_name" = rep(newone$site_name),
+      "dataset_id" = rep(newone$dataset_id),
+      "n_pnts_rmvd" = (nrow(xxx) - nrow(newone)),
       "perc_pnts_rmvd" = abs( (nrow(newone) / nrow(xxx) * 100) - 100 ),
       stringsAsFactors = FALSE
     )
-    
+
     report.list[[i]] <- report
     
     # 4 # Fill track_id with bird_id if NA  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,5 +126,4 @@ prep <- function(inFolder, standard, files=NULL, outFolder){
   }
   
   return(do.call("rbind", report.list))
-  
 }

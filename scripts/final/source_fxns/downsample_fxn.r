@@ -12,7 +12,7 @@ downsample <- function(species, inFolder, outFolder, interval=24, redo=TRUE, his
   
   pacman::p_load(lubridate, tools)
   
-  source("C:/Users/Martim Bill/Documents/R/source_scripts/SubSamp_fxn.r") # call workhorse SubSamp() fxn
+  source("/Users/bwhf/Documents/GitHub/political_connectivity/scripts/final/source_fxns/SubSamp_fxn.r") # call workhorse SubSamp() fxn
   
   files <- list.files(inFolder, pattern = species, full.names = T)
   

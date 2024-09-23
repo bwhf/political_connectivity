@@ -45,7 +45,6 @@ out <- "data/analysis/noeqx_dnsmpl/"
 
 rmEquinox(inFolder=folder, outFolder=out)
 
-
 # Step 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Downsample tracks for each data set to 24h intervals ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,7 +71,12 @@ source("scripts/final/source_fxns/filter_badmonths_fxn.R")
 inFolder <- "data/analysis/noeqx_dnsmpl/"
 outFolder <- "data/analysis/month_filtered/"
 
-bad_df <- filter_badmonths(inFolder = inFolder, outFolder = outFolder, n_ind=1, n_days = 10)
+bad_df <- filter_badmonths(inFolder = inFolder, outFolder = outFolder, n_ind=1, n_days = 10) # added code to filter out GLS tracked species
+
+files <- list.files(outFolder)
+nonGLS <- unique(do.call("rbind", stringr::str_split(files, pattern="_") )[, 1]) # list of non GLS track species
+nonGLS_df <- as.data.frame(nonGLS)
+write.csv(nonGLS_df, "data/analysis/summary_tables/specieslist.csv", row.names = F)
 
 ### Reporting of filtering ~~~~~~~~~~~~
 # how many times were months removed? (spp-site 'times')
@@ -97,14 +101,16 @@ folder <- "data/analysis/month_filtered/"
 files <- list.files(folder)
 
 ## run for one species
-species <- "Calonectris.borealis_Madeira.rds"
-files <- files[str_detect(files, species)]
-
-# repo <- "figures/test/annual_coverage_spp.site/" 
-repo <- "data/analysis/figures/sp.site_annual_coverage/" 
-
-annualCover_plot(files=files, inFolder = folder, byYear = F, savePlot = T, saveFolder = repo)
-
+for (i in 1:length(nonGLS)) {
+  print(paste0(c(i, nonGLS[[i]])))
+  species <- nonGLS[[i]]
+  files1 <- files[str_detect(files, species)]
+  
+  # repo <- "figures/test/annual_coverage_spp.site/" 
+  repo <- "data/analysis/figures/sp.site_annual_coverage/" 
+  
+  annualCover_plot(files=files1, inFolder = folder, byYear = F, savePlot = T, saveFolder = repo)
+}
 
 
 ## ANALYSIS STEPS ## ---------------------------------------------------------
@@ -244,7 +250,7 @@ for(i in 1:length(ins)){ # loop through each RFMO
 source("scripts/final/source_fxns/annual_sp_plot_fxn.R")
 
 folder  <- "data/analysis/glob_count/"
-outFolder <- "figures/species_annual_plots/"
+outFolder <- "data/analysis/figures/species_annual_plots/"
 
 
 annual_sp_plot(inFolder = folder, plotFolder = outFolder, viewPlot = F)

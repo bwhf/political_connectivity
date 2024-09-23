@@ -10,6 +10,7 @@ filter_badmonths <- function(inFolder, outFolder, n_ind=1, n_days=NULL){
   pacman::p_load(ggplot2, RColorBrewer, lubridate, stringr)
   
   files <- list.files(inFolder)
+  files <- grep(pattern = "GLS", files, value=T, invert = T) # filter out GLS data
   
   
   spp.list <- lapply(strsplit(files, "_"), function(x) x[[1]])  # get species names

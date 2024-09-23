@@ -25,7 +25,7 @@ assign <- "A"
 # assign <- "B"
 
 # use popData sheet to associate site_name in TD to an origin country (ONLY GOOD FOR MEASURES OF VISITATION)
-popData <- read.csv('data_test/population_estimates.csv', stringsAsFactors = F)
+popData <- read.csv('data/population_estimates.csv', stringsAsFactors = F)
 
 ## change assignment of birds breeding in disputed areas 
 if(assign == "A"){
@@ -41,7 +41,7 @@ if(assign == "A"){
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~``
 
 # Construct a global grid with cells approximately X km across 
-dggs <- dgconstruct(spacing=360, metric=TRUE, resround='nearest')
+dggs <- dgconstruct(spacing=100, metric=TRUE, resround='nearest') # spacing unit  CLS (km)
 
 # LOOP through spp-sites
 inFolder <- paste0(master, 'oveez/')
@@ -127,21 +127,23 @@ if(by_month == TRUE){
     richness = sum(na.omit(richness))
   )
   
-  grid <- dgcellstogrid(dggs, cells = as.numeric(cellcnt_sum$cell), frame=TRUE, wrapcells=TRUE) # get only cells which contained fixes
+  # grid <- dgcellstogrid(dggs, cells = as.numeric(cellcnt_sum$cell), frame=TRUE, wrapcells=TRUE) # get only cells which contained fixes
+  grid <- dgcellstogrid(dggs, cells = as.numeric(cellcnt_sum$cell))
+  grid <- grid %>% rename("cell" = "seqnum")
   grid <- merge(grid, cellcnt_sum, by.x="cell")
   
   if(visit_rich==TRUE){
     
     if(assign=="A"){
-      saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_452km_vrich.rds"))
+      saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_95km_vrich.rds"))
     } else if(assign=="B"){
-      saveRDS(grid, paste0(master, "glob_hexgrid/glob_hexgrid/global_hexgrid_452km_vrich.rds"))
+      saveRDS(grid, paste0(master, "glob_hexgrid/glob_hexgrid/global_hexgrid_95km_vrich.rds"))
     }
   } else {
     if(assign=="A"){
-      saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_452km_trich.rds"))
+      saveRDS(grid, paste0(master, "glob_hexgrid/global_hexgrid_95km_trich.rds"))
     } else if(assign=="B"){
-      saveRDS(grid, paste0(master, "sovereign_B_assign/glob_hexgrid/global_hexgrid_452km_trich.rds"))
+      saveRDS(grid, paste0(master, "sovereign_B_assign/glob_hexgrid/global_hexgrid_95km_trich.rds"))
     }
   }
   
