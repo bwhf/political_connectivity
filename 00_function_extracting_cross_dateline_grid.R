@@ -3,6 +3,7 @@ library(sf)
 library(dplyr)
 library(purrr)
 library(ggplot2)
+library(plotly)
 
 # create a function that identify the cells that cross 360 lon
 find_cross <- function(hex_grid) {
@@ -54,6 +55,18 @@ wrap_360plus <- function(new_hex_grid) {
   return(wrap_hex_grid)
 }
 
+# Function to adjust longitude for Atlantic Ocean visualization
+adjust_atlantic_longitude <- function(geometry, ocean) {
+  if (ocean %in% c("North Atlantic", "South Atlantic")) {
+    # Convert geometry: If longitude > 180, subtract 360 (e.g., 350 -> -10)
+    adjusted_geom <- st_set_geometry(geometry, st_transform(geometry, crs = "+proj=longlat +datum=WGS84"))
+    adjusted_geom <- st_shift_longitude(adjusted_geom)  # Shift coordinates from 0-360 to -180-180
+    return(adjusted_geom)
+  } else {
+    return(geometry)  # Keep other oceans unchanged
+  }
+}
+
 # load world map
 library(maps)
 library(mapproj)
@@ -76,7 +89,78 @@ plot_world <- function(dat, var, tit) {
   return(p)
 }
 
+# plot it out 
+plot_world_cls <- function(dat, var, tit) {
+  
+  p <- ggplot() +
+    geom_sf(data = dat, aes(fill = log10(var)), color = "NA") +
+    facet_wrap(vars(season)) +
+    scale_fill_viridis_c() +
+    theme_minimal() +
+    ggtitle(paste0(tit)) +
+    geom_polygon(data = map_df, aes(x=long, y = lat, group=group), fill = "grey", colour = "grey", alpha = 0.5) +
+    geom_sf(data = eez_boundaries, color = "grey", alpha = 0.7)
+  
+  return(p)
+}
 
+# interactive population map 
+plot_world_fronts <- function(dat, var, tit) {
+  
+  p <- ggplot() +
+    geom_sf(data = dat, aes(fill = {{var}}), color = NA) +
+    facet_wrap(vars(season)) +
+    theme_minimal() +
+    ggtitle(tit) +
+    geom_polygon(data = map_df, aes(x=long, y = lat, group=group), fill = "grey", colour = "grey", alpha = 0.5) +
+    geom_sf(data = eez_boundaries, color = "grey", alpha = 0.7) + 
+    theme(text = element_text(size = 16)) 
+  return(p)
+}
+
+plot_world_spp_pop <- function(dat, var, tit) {
+  
+  p <- ggplot() +
+    geom_sf(data = dat, aes(fill = scientific_name, shape = ol), color = "NA") +
+    theme_minimal() +
+    ggtitle(paste0(tit)) +
+    geom_polygon(data = map_df, aes(x=long, y = lat, group=group), fill = "grey", colour = "grey", alpha = 0.5) +
+    geom_sf(data = eez_boundaries, color = "grey", alpha = 0.7)
+
+    # Convert the ggplot to a plotly object for interactivity
+  interactive_plot <- ggplotly(p, tooltip = "text")
+  
+  return(interactive_plot)
+}
+
+# interactive population by ocean region
+plot_ocean_spp_pop <- function(dat, region, tit, map) {
+  p_ocean_spp <- ggplot(data = dat %>% filter(ocean == region)) +
+    geom_sf(aes(fill = scientific_name)) +
+    labs(title = tit) +
+    geom_polygon(data = map, aes(x=long, y = lat, group=group), fill = "grey", colour = "grey", alpha = 0.5) +
+    geom_sf(data = eez_boundaries, color = "grey", alpha = 0.7) +
+    theme_minimal()
+  
+  # Convert the ggplot to a plotly object for interactivity
+  pint_npac_spp <- ggplotly(p_ocean_spp, tooltip = "text")
+  return(pint_npac_spp)
+}
+
+plot_world_spp_ov <- function(dat, var, tit) {
+  
+  p <- ggplot() +
+    geom_sf(data = dat, aes(fill = var, shape = ol), color = "NA") +
+    theme_minimal() +
+    ggtitle(paste0(tit)) +
+    geom_polygon(data = map_df, aes(x=long, y = lat, group=group), fill = "grey", colour = "grey", alpha = 0.5) +
+    geom_sf(data = eez_boundaries, color = "grey", alpha = 0.7)
+  
+  # Convert the ggplot to a plotly object for interactivity
+  interactive_plot <- ggplotly(p, tooltip = "text")
+  
+  return(interactive_plot)
+}
 
 
 

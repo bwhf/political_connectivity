@@ -1,6 +1,11 @@
 # plot it out
 # recentering and projection objects
-
+library(lubridate)
+library(tidyverse)
+library(sf)
+library(dplyr)
+library(dggridR)
+library(readr)
 source("/Users/bwhf/Documents/GitHub/political_connectivity/scripts/final/source_fxns/recenter_map_fxn.R") # mapdata re-centering function
 source("/Users/bwhf/Documents/GitHub/political_connectivity/00_function_extracting_cross_dateline_grid.R") # finding hex grids that cross dateline and extract from dataframe for plotting
 
@@ -77,6 +82,35 @@ p_sp
 outputfile <- paste0("data/analysis/figures/glob_timespent_all_ann_timespent_log.png")
 ggsave(filename = outputfile, plot = p_sp, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
+# plot where only bird present but no fishing effort
+grid_ts_fh <- fuzzyjoin::fuzzy_left_join(x = grid_all, y = grid_fh_cly, by = c("cell"), match_fun = `==`)
+grid_bo <- grid_ts_fh %>% dplyr::select(-cell.y, -geometry.y) %>% rename("cell" = "cell.x", "geometry" = "geometry.x")
+# Replace NA with 0 in the entire dataframe
+grid_bo$avg_fh[is.na(grid_bo$avg_fh)] <- 0
+
+
+# converting hex grid to st_polygon and set CRS
+sp_grid_bo <- grid_bo %>%
+  st_as_sf() %>%
+  st_set_crs(st_crs(fh_grid)) %>%
+  st_cast("POLYGON")
+
+# recenter hex grid
+recent_sp_grid_bo <- recentre(sp_grid_bo, shift) # some long >360
+
+crossing_cells <- find_cross(recent_sp_grid_bo) # 43 cells
+recent_sp_grid_new <- replace_cross(recent_sp_grid_bo) 
+recent_sp_grid_0360 <- wrap_360plus(recent_sp_grid_new)
+pdat <- recent_sp_grid_0360 %>% filter(avg_fh == 0)
+
+# plot it out 
+p_sp <- plot_world(pdat, pdat$timespent, "Annual total timespent")
+p_sp
+
+# save the plot
+outputfile <- paste0("data/analysis/figures/glob_timespent_all_ann_timespent_log_nofh.png")
+ggsave(filename = outputfile, plot = p_sp, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
+
 ######
 # match with species time spent
 grid_overlap <- read_rds("data/analysis/glob_hexgrid/hexgrid_res8_overlap_cly.rds")
@@ -95,13 +129,12 @@ outputfile <- paste0("data/analysis/figures/global_overlap_cly.png")
 ggsave(filename = outputfile, plot = p_ov, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 # merge overlap with front freq
-grid_var <- read_rds("data/analysis/glob_hexgrid/hexgrid_res8_frfr10_cly.rds")
+grid_var <- read_rds("data/analysis/glob_hexgrid/hexgrid_res8_frfr_cly.rds")
 # recenter 
 grid_var <- grid_var %>%
   st_as_sf() %>%
   st_set_crs(st_crs(fh_grid)) %>%
   st_cast("POLYGON")
-grid_var$frfr <- as.numeric(grid_var$frfr)
 
 recent_var_grid <- recentre(grid_var, shift)
 
@@ -111,7 +144,7 @@ recent_var_grid_0360 <- wrap_360plus(recent_var_grid_new)
 
 # plot it out 
 p_ff <- ggplot() +
-  geom_sf(data = recent_var_grid_0360, aes(fill = frfr), color = "black") +
+  geom_sf(data = recent_var_grid_0360, aes(fill = frfr27), color = "black") +
   scale_fill_viridis_c() +
   theme_minimal() +
   ggtitle(paste0("Front frequency underlying annual overlap grids")) +
@@ -120,6 +153,44 @@ p_ff <- ggplot() +
 p_ff
 
 # save the plot
-outputfile <- paste0("data/analysis/figures/front_frequency_thres10_cly.png")
+outputfile <- paste0("data/analysis/figures/front_frequency_thres27_cly.png")
 ggsave(filename = outputfile, plot = p_ff, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
+
+# simple scatter plot of overlap vs front freq
+grid_var1 <- grid_var %>% mutate(overlap = avg_fh*timespent)
+
+p_ov_ff10 <- ggplot() + geom_point(data = grid_var1, aes(y = log10(overlap), x = frfr10, color = log10(timespent))) + theme_grey()
+p_ov_ff10
+hist(grid_var1$frfr10)
+
+p_ov_ff18 <- ggplot() + geom_point(data = grid_var1, aes(y = log10(overlap), x = frfr18, color = log10(timespent))) + theme_grey()
+p_ov_ff18
+hist(grid_var1$frfr18)
+
+p_ov_ff27 <- ggplot() + geom_point(data = grid_var1, aes(y = log10(overlap), x = frfr27, color = log10(timespent))) + theme_grey()
+p_ov_ff27
+hist(grid_var1$frfr27)
+
+# scatter plot of timespent vs front freq
+grid_var_ts <- read_rds("data/analysis/glob_hexgrid/hexgrid_res8_frfr_allts_cly.rds")
+grid_var_ts <- grid_var_ts %>% mutate(overlap = avg_fh*timespent)
+
+# Replace NA with 0 in the entire dataframe
+grid_var_ts$overlap[is.na(grid_var_ts$overlap)] <- 0
+grid_var_ts <- grid_var_ts %>% 
+  mutate(co = case_when(
+    overlap == 0 ~ "No overlap",
+    overlap > 0 ~ "Overlapped"
+))
+
+
+p_ts_ff10 <- ggplot() + geom_point(data = grid_var_ts, aes(y = log10(timespent), x = frfr10, color = log10(overlap)), alpha = 0.8) + facet_wrap(vars(co)) + theme_grey()
+p_ts_ff10
+
+p_ts_ff18 <- ggplot() + geom_point(data = grid_var_ts, aes(y = log10(timespent), x = frfr18, color = log10(overlap)), alpha = 0.8) + facet_wrap(vars(co)) + theme_grey()
+p_ts_ff18
+
+p_ts_ff27 <- ggplot() + geom_point(data = grid_var_ts, aes(y = log10(timespent), x = frfr27, color = log10(overlap)), alpha = 0.8) + facet_wrap(vars(co)) + theme_grey()
+p_ts_ff27
+
 
