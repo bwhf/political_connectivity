@@ -99,3 +99,5 @@ species_by_hotspot_ol <- map_dfr(names(hotspots), function(region) {
     )
 })
 
+## annual ranking
+species_hotspot_summary <- species_by_hotspot_ol %>% group_by(region, scientific_name, category) %>% summarise(sum_overlap = sum(total_overlap)) %>% arrange(region, sum_overlap) %>% ungroup()
