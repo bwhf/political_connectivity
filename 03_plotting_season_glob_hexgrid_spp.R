@@ -653,8 +653,8 @@ p_ct_spp <- ggplot(data = sp_centroid_overlap, aes(y = log10(timespent), x = log
  facet_wrap(vars(scientific_name)) +
   # geom_text(aes(label = scientific_name), hjust = 0.5, vjust = -0.5, size = 3, color = "darkgray") +  # Add species labels
   labs(
-    title = "Centroid of Time Spent vs Fishing Hours by Species",
-    y = "Time Spent (log10)",
+    title = "Centroid of Bird Occurrence vs Fishing Hours by Species",
+    y = "Bird-months (log10)",
     x = "Fishing Hours (log10)"
   ) +
   theme(
@@ -669,12 +669,12 @@ ggsave(filename = outputfile, plot = p_ct_spp, width = 3840, height = 2160, unit
 
 # Create the centroid plot by season
 p_ct_spp2 <- ggplot(data = sp_centroid_overlap, aes(y = log10(timespent), x = log10(fishing_hours))) +
-  geom_point(data = sp_centroid_overlap, aes(y = log10(timespent), x = log10(fishing_hours), color = scientific_name, shape = season), alpha = 1, size = 3) +  # Add centroid points
+  geom_point(data = sp_centroid_overlap, aes(y = log10(timespent), x = log10(fishing_hours), color = scientific_name), alpha = 1, size = 3) +  # Add centroid points
   facet_wrap(vars(season)) +
   geom_text(aes(label = scientific_name), hjust = 0.5, vjust = -0.5, size = 3, color = "darkgray") +  # Add species labels
   labs(
-    title = "Centroid of Time Spent vs Fishing Hours by Species",
-    y = "Time Spent (log10)",
+    title = "Centroid of Bird Occurrence vs Fishing Hours by Species",
+    y = "Bird-months (log10)",
     x = "Fishing Hours (log10)"
   ) +
   theme(
