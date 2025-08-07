@@ -91,17 +91,23 @@ plot_world <- function(dat, var, tit) {
 
 # plot it out 
 plot_world_cls <- function(dat, var, tit) {
-  
-  p <- ggplot() +
-    geom_sf(data = dat, aes(fill = log10(var)), color = "NA") +
-    facet_wrap(vars(season)) +
-    scale_fill_viridis_c() +
-    theme_minimal() +
-    ggtitle(paste0(tit)) +
-    geom_polygon(data = map_df, aes(x=long, y = lat, group=group), fill = "grey", colour = "grey", alpha = 0.5) +
-    geom_sf(data = eez_boundaries, color = "grey", alpha = 0.7)
-  
-  return(p)
+  ggplot() +
+    geom_polygon(data = map_df, aes(long, lat, group = group),
+                 fill = "wheat", colour = "wheat", alpha = 0.3, linewidth = 0.3) +
+    geom_sf(data = dat, aes(fill = log10(var)), color = NA) +
+    geom_sf(data = eez_boundaries, color = "beige", alpha = 0.7, linewidth = 0.5,  fill = NA) +
+    facet_wrap(~season,
+               labeller = as_labeller(c(
+      "Spring" = "SON",
+      "Summer" = "DJF",
+      "Autumn" = "MAM",
+      "Winter" = "JJA"
+    ))) +
+    scale_fill_viridis_c(name = "log10(value)", na.value = "grey90") +
+    labs(title = tit, x = "long", y = "lat") +
+    theme_minimal(base_size = 12) +
+    theme(panel.grid = element_blank()
+    )
 }
 
 # interactive population map 

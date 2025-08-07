@@ -28,7 +28,7 @@ proj <- sprintf("+proj=kav7 +lon_0=%i", central_meridian)
 # read data to get crs
 grid_fh_cly <- read_rds("/Users/bwhf/Documents/GitHub/political_connectivity/data/fh_month/fishhour_month/hexgrid_res8_fh_cly.rds")
 
-grid_over_cls <- read_rds("/Users/bwhf/Documents/GitHub/political_connectivity/data/analysis/glob_hexgrid_dawn/hexgrid_res8_overlap_fh_ts_cls.rds")
+grid_over_cls <- read_rds("/Users/bwhf/Documents/GitHub/political_connectivity/data/analysis/glob_hexgrid_dawn/hexgrid_res8_overlap_fh_ts_front_cls_mths.rds")
 
 grid_over_cls <- grid_over_cls %>% 
   mutate(season = fct_relevel(season, "Spring", "Summer", "Autumn", "Winter"))
@@ -60,12 +60,12 @@ p_fh <- plot_world_cls(recent_fh_grid_0360, recent_fh_grid_0360$avg_fh, "Seasona
 p_fh
 
 # save the plot
-outputfile <- paste0("data/analysis/figures_dawn/global_fishing_hour/total_fishing_hour_cls.png")
+outputfile <- paste0("data/analysis/figures_dawn/global_fishing_hour/total_fishing_hour_cls_mths.png")
 ggsave(filename = outputfile, plot = p_fh, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 #####
 # plot annual species timespent
-grid_all <- read_rds("/Users/bwhf/Documents/GitHub/political_connectivity/data/analysis/glob_hexgrid_dawn/hexgrid_res8_overlap_ts_fh_cls.rds")
+grid_all <- read_rds("/Users/bwhf/Documents/GitHub/political_connectivity/data/analysis/glob_hexgrid_dawn/hexgrid_res8_overlap_ts_fh_front_cls_mths.rds")
 
 grid_all <- grid_all %>% 
   mutate(season = fct_relevel(season, "Spring", "Summer", "Autumn", "Winter"))
@@ -89,7 +89,7 @@ p_sp <- plot_world_cls(recent_sp_grid_0360, recent_sp_grid_0360$total_ts, "Annua
 p_sp
 
 # save the plot
-outputfile <- paste0("data/analysis/figures_dawn/glob_timespent_all_cls.png")
+outputfile <- paste0("data/analysis/figures_dawn/glob_timespent_all_cls_mths.png")
 ggsave(filename = outputfile, plot = p_sp, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 # Replace NA with 0 in the entire dataframe
@@ -102,7 +102,7 @@ p_sp <- plot_world_cls(pdat, pdat$total_ts, "Annual total timespent where no pre
 p_sp
 
 # save the plot
-outputfile <- paste0("data/analysis/figures_dawn/glob_timespent_dawn_all_cls_timespent_log_nofh.png")
+outputfile <- paste0("data/analysis/figures_dawn/glob_timespent_dawn_all_cls_mths_timespent_log_nofh.png")
 ggsave(filename = outputfile, plot = p_sp, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 ######
@@ -111,7 +111,7 @@ p_ov <- plot_world_cls(recent_fh_grid_0360, recent_fh_grid_0360$overlap, "Annual
 p_ov
 
 # save the plot
-outputfile <- paste0("data/analysis/figures_dawn/global_overlap_dawn_cls.png")
+outputfile <- paste0("data/analysis/figures_dawn/global_overlap_dawn_cls_wheat.png")
 ggsave(filename = outputfile, plot = p_ov, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 # plot front freq
@@ -120,9 +120,10 @@ recent_ov_grid_0360 <- recent_fh_grid_0360 %>% filter(overlap > 0)
 p_ff <-  plot_world_cls(recent_ov_grid_0360, recent_ov_grid_0360$front_freq, "Frontal frequency underlying overlap")
 
 # save the plot
-outputfile <- paste0("data/analysis/figures_dawn/front_frequency_dawn_thres18_cls.png")
+outputfile <- paste0("data/analysis/figures_dawn/front_frequency_dawn_thres18_cls_mths.png")
 ggsave(filename = outputfile, plot = p_ff, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
+#####
 # simple scatter plot of overlap vs front freq
 p_ov_ff <- ggplot() + geom_point(data = recent_ov_grid_0360, aes(y = log10(overlap), x = front_freq, color = log10(total_ts))) + theme_grey()
 p_ov_ff
