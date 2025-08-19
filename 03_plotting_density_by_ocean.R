@@ -29,21 +29,21 @@ grid_all_fh <- grid_all_fh %>%
 p_ff_fh_ts <- plot_triple_density(recent_sp_grid_ocean, all_front, grid_all_fh, front_freq, "Front Freq")
 
 # save the plot
-outputfile <- paste0("data/analysis/figures_dawn/density_ff_fh_ts_ocean.png")
+outputfile <- paste0("data/analysis/figures_dawn/density_ff_fh_ts_ocean_bg.png")
 ggsave(filename = outputfile, plot = p_ff_fh_ts, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 ## front strength
 p_sf_fh_ts <- plot_triple_density(recent_sp_grid_ocean, all_front, grid_all_fh, msfront, "Mean Front Strength")
 
 # save the plot
-outputfile <- paste0("data/analysis/figures_dawn/density_sf_fh_ts_ocean.png")
+outputfile <- paste0("data/analysis/figures_dawn/density_sf_fh_ts_ocean_bg.png")
 ggsave(filename = outputfile, plot = p_sf_fh_ts, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 ## front persistence
 p_pf_fh_ts <- plot_triple_density(recent_sp_grid_ocean, all_front, grid_all_fh, pfront, "Front Persistence")
 
 # save the plot
-outputfile <- paste0("data/analysis/figures_dawn/density_pf_fh_ts_ocean.png")
+outputfile <- paste0("data/analysis/figures_dawn/density_pf_fh_ts_ocean_bg.png")
 ggsave(filename = outputfile, plot = p_pf_fh_ts, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 # Density of timespent and fishin hours ------
@@ -131,21 +131,42 @@ plot_ocean_ovff_density2
 outputfile <- paste0("data/analysis/figures_dawn/density_ov_ts_cls_ocean.png")
 ggsave(filename = outputfile, plot = plot_ocean_ovff_density2, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
-# front freq
-plot_ocean_ovff_density2 <- plot_dual_density_2(recent_sp_grid_ocean %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), all_front %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), msfront, "front strength")
-plot_ocean_ovff_density2
+plot_ocean_ovff_density3 <- plot_dual_density_3(recent_sp_grid_ocean %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), all_front %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), front_freq, "front frequency")
+plot_ocean_ovff_density3
+
+# save the plot
+outputfile <- paste0("data/analysis/figures_dawn/density_ov_ts_cls_ocean_bg.png")
+ggsave(filename = outputfile, plot = plot_ocean_ovff_density3, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
+
+# front strength
+plot_ocean_ovsf_density2 <- plot_dual_density_2(recent_sp_grid_ocean %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), all_front %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), msfront, "front strength")
+plot_ocean_ovsf_density2
 
 # save the plot
 outputfile <- paste0("data/analysis/figures_dawn/density_ov_ts_cls_ocean_msfront.png")
-ggsave(filename = outputfile, plot = plot_ocean_ovff_density2, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
+ggsave(filename = outputfile, plot = plot_ocean_ovsf_density2, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
+
+plot_ocean_ovsf_density3 <- plot_dual_density_3(recent_sp_grid_ocean %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), all_front %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), front_freq, "front strength")
+plot_ocean_ovsf_density3
+
+# save the plot
+outputfile <- paste0("data/analysis/figures_dawn/density_ov_ts_cls_ocean_sf_bg.png")
+ggsave(filename = outputfile, plot = plot_ocean_ovsf_density3, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 # front freq
-plot_ocean_ovff_density2 <- plot_dual_density_2(recent_sp_grid_ocean %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), all_front %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), pfront, "front presistence")
-plot_ocean_ovff_density2
+plot_ocean_ovpf_density2 <- plot_dual_density_2(recent_sp_grid_ocean %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), all_front %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), pfront, "front persistence")
+plot_ocean_ovpf_density2
 
 # save the plot
 outputfile <- paste0("data/analysis/figures_dawn/density_ov_ts_cls_ocean_pfront.png")
-ggsave(filename = outputfile, plot = plot_ocean_ovff_density2, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
+ggsave(filename = outputfile, plot = plot_ocean_ovpf_density2, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
+
+plot_ocean_ovpf_density3 <- plot_dual_density_3(recent_sp_grid_ocean %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), all_front %>% dplyr::filter(ocean %in% c("Indian Ocean", "North Atlantic Ocean", "North Pacific Ocean", "South Atlantic Ocean", "South Pacific Ocean")), front_freq, "front persistence")
+plot_ocean_ovpf_density3
+
+# save the plot
+outputfile <- paste0("data/analysis/figures_dawn/density_ov_ts_cls_ocean_pf_bg.png")
+ggsave(filename = outputfile, plot = plot_ocean_ovpf_density3, width = 3840, height = 2160, unit = "px", dpi = 200, bg = "white")
 
 # Background density and Overlap metrics in jitter -----
 # front freq
